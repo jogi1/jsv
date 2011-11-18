@@ -123,7 +123,7 @@ unsigned char *Packet_Create(int *len, const char *format, ...)
 				size += sizeof(double);
 				break;
 			case 's':
-				sval = (char *)va_arg(argptr, int);
+				sval = (char *)va_arg(argptr, int *);
 				memcpy(buf+size, (const void *)sval, strlen(sval));
 				size += strlen(sval);
 				break;
@@ -456,7 +456,7 @@ int Packet_GetSizeV(const char *format, va_list *argptr_in)
 				size += sizeof(char);
 				break;
 			case 'B':
-				buf = (struct buffer *)va_arg(argptr, int);
+				buf = (struct buffer *)va_arg(argptr, int *);
 				printf("%p\n",buf);
 				size += buf->position;
 				break;
@@ -545,7 +545,7 @@ qboolean Packet_WriteToBufferV(struct buffer *buffer, const char *format, va_lis
 				buffer->position += sizeof(char);
 				break;
 			case 'B':
-				buf = (struct buffer *)va_arg(argptr, int);
+				buf = (struct buffer *)va_arg(argptr, int *);
 				memcpy(buffer->data + buffer->position, (const void *)buf->data, buf->position);
 				buffer->position += buf->position;
 				break;
@@ -576,7 +576,7 @@ qboolean Packet_WriteToBufferV(struct buffer *buffer, const char *format, va_lis
 				buffer->position += sizeof(double);
 				break;
 			case 's':
-				sval = (char *)va_arg(argptr, int);
+				sval = (char *)va_arg(argptr, int *);
 				memcpy(buffer->data + buffer->position, (const void *)sval, strlen(sval));
 				buffer->position += strlen(sval);
 				buffer->data[buffer->position] = '\0';
