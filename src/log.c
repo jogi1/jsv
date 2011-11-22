@@ -70,8 +70,13 @@ static void *Log_Thread(void *data)
 		Print_Console("could not open logfile: %s\n", buffer);
 	}
 
-	while (log->run)
+	while (1)
 	{
+
+		if (log->run == false)
+			if (log->first == log->last)
+				break;
+
 		e = log->first;
 		while (e)
 		{

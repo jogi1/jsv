@@ -502,6 +502,25 @@ static void Server_WriteUpdate(struct server *server, struct client *client, str
 
 }
 
+static void Server_WritePlayersToClient(struct server *server , struct client *client)
+{
+	int i, j;
+#warning do this properly
+
+	for (i=0; i<MAX_CLIENTS; i++)
+	{
+		if (server->clients[i].inuse == false)
+			continue;
+
+
+		Client_Write(client, "ccS", svc_playerinfo, i, 0);
+
+		for (j=0; j<3; j++)
+			Client_Write(client, "C", server->edicts[i+1].state.origin[j]);
+
+		Client_Write(client, "c", 0);
+	}
+}
 
 static void Server_WriteEntitiesToClient(struct server *server, struct client *client)
 {
@@ -516,6 +535,8 @@ static void Server_WriteEntitiesToClient(struct server *server, struct client *c
 	memset(&origin, 0, sizeof(*origin));
 
 	e = NULL;
+
+	Server_WritePlayersToClient(server, client);
 
 	for (i=1+MAX_CLIENTS; i < server->edicts_count; i++, e = &server->edicts[i])
 	{
@@ -966,7 +987,7 @@ static void Server_LoadEntities(struct server *server, char *entity_string)
 		if (*c == '\n')
 			c--;
 		x = c - s + 1;
-		LUA_CallFunctionArguments(server, &server->mod, NULL, "entity_load", "S", s, x);
+		LUA_CallFunctionArguments(server, &server->mod, "entity_load", 0, "S", s, x);
 		s = c;
 	}
 	LUA_CallFunction(server, &server->mod, NULL, "print_info");
@@ -1030,6 +1051,7 @@ static qboolean Server_LoadMap(struct server *server)
 	int i;
 	char buffer[64];
 	struct edict *e;
+	vec3_t test;
 
 	server->spawn_count++;
 
@@ -1081,6 +1103,23 @@ static qboolean Server_LoadMap(struct server *server)
 	Server_LoadEntities(server, server->map->entity_string);
 	LUA_CallFunction(server, &server->mod, NULL, "entity_load_finished");
 
+	for (i=0; ;i++)
+	{
+		if (server->edicts[i].inuse == false)
+			break;
+
+		printf("%i: %i %s - %f %f %f\n", i, server->edicts[i].state.model_index,
+				server->model_precache[server->edicts[i].state.model_index],
+				server->edicts[i].state.origin[0],
+				server->edicts[i].state.origin[1],
+				server->edicts[i].state.origin[2]);
+	}
+
+	for (i=0; i<32; i++)
+	{
+		LUA_GetSpawn(server, &server->edicts[i+1].state.origin);
+	}
+
 	if (!Server_CreateSignon(server))
 		return false;
 
@@ -1123,10 +1162,16 @@ static void Server_Frame(struct server *server)
 		Server_HandlePacket(server, &p);
 	}
 
+	Physics_Frame(server);
+
 	for (i=0; i<MAX_CLIENTS; i++)
 	{
 		if (server->clients[i].inuse && server->clients[i].packet_recieved)
 		{
+//			printf("%f %f %f\n"	, server->edicts[i+1].state.origin[0]
+//								, server->edicts[i+1].state.origin[1]
+//								, server->edicts[i+1].state.origin[2]);
+
 			Server_SendPacket(server , &server->clients[i]);
 			server->clients[i].packet_recieved = false;
 		}
@@ -1144,7 +1189,7 @@ int main (int argc, char *argv[])
 {
 	struct server *server;
 
-	signal(SIGINT, Server_SignalHandler);
+//	signal(SIGINT, Server_SignalHandler);
 	signal(SIGQUIT, Server_SignalHandler);
 
 	server = calloc(1, sizeof(*server));
@@ -1166,6 +1211,8 @@ int main (int argc, char *argv[])
 	server_handles.server[1] = NULL;
 
 	server->port = 27500;
+
+	Log_Print(server->log, log_debug, "sofar so good\n");
 
 	if (Server_HandleArguments(server, argc, argv))
 	{

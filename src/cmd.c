@@ -35,6 +35,7 @@ void CMD_New(struct server *server, struct client *client, struct tokenized_stri
 	int playernum;
 
 	playernum = client - server->clients;
+
 	if (client->spectator)
 		playernum |= 128;
 

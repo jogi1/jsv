@@ -373,6 +373,12 @@ void Packet_ReadDeltaUsercmd(struct packet *packet, struct usercmd *ucmd)
 	if (bits & CM_UP)
 		ucmd->upmove = Packet_ReadShort(packet);
 
+	if (bits & CM_BUTTONS)
+		ucmd->buttons = Packet_ReadByte(packet);
+
+	if (bits & CM_IMPULSE)
+		ucmd->impulse = Packet_ReadByte(packet);
+
 	ucmd->msec = Packet_ReadByte(packet);
 }
 
@@ -560,18 +566,18 @@ qboolean Packet_WriteToBufferV(struct buffer *buffer, const char *format, va_lis
 				buffer->position += sizeof(short);
 				break;
 			case 'C':
-				short_val = (int)va_arg(argptr, short) * 8;
+				fval = (float)va_arg(argptr, double);
+				short_val = (int)(fval * 8);
 				memcpy(buffer->data + buffer->position, (const void*)&short_val, sizeof(short));
 				buffer->position += sizeof(short);
 				break;
-
 			case 'f':
-				fval = (float)va_arg(argptr, int);
+				fval = (float)va_arg(argptr, double);
 				memcpy(buffer->data + buffer->position, (const void*)&fval, sizeof(float));
 				buffer->position += sizeof(float);
 				break;
 			case 'd':
-				dval = va_arg(argptr, int);
+				dval = va_arg(argptr, double);
 				memcpy(buffer->data + buffer->position, (const void*)&dval, sizeof(double));
 				buffer->position += sizeof(double);
 				break;
