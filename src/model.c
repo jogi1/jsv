@@ -211,7 +211,7 @@ static void PVS_Add(struct map *map, struct pvs *pvs, struct node *node)
 		}
 
 		plane = node->plane;
-		d = VECTOR_DotProduct(pvs->origin, plane->normal) - plane->dist;
+		d = Vector_DotProduct(pvs->origin, plane->normal) - plane->dist;
 		if (d>8)
 			node = node->children[0];
 		else if (d<-8)

@@ -14,6 +14,9 @@ items_types = {
 	--]]
 -- item types and corresponding models
 -- so that models will be automatically be preloaded for entities
+
+require "vector"
+
 items_types = {
 	item_armorInv ="progs/invulner.mdl",
 	item_health = "maps/b_bh10.bsp",
@@ -45,8 +48,8 @@ lightstyles = {
 
 preload_models = {"progs/player.mdl"}
 preload_sounds = {"player/plyrjmp8.wav", "player/h2ojump.wav"}
-precached_models = {}
-precached_sounds = {}
+server.precached_models = {}
+server.precached_sounds = {}
 static_entities = {}
 lights = {}
 entities = {}
@@ -61,15 +64,15 @@ edicts = {}
 function FUNC_map_start (server_ptr, client, ...)
 	--preload models and sounds
 	for key, value in pairs(preload_models) do
-		precached_models[value] = server.precache_model(server_ptr, value)
+		server.precached_models[value] = server:precache_model(value)
 	end
 
 	for key, value in pairs(preload_sounds) do
-		precached_sounds[value] = server.precache_sound(server_ptr, value)
+		server.precached_sounds[value] = server:precache_sound(value)
 	end
 
 	for key, value in pairs(lightstyles) do
-		server.add_lightstyle(server_ptr, value);
+		server:add_lightstyle(value);
 	end
 end
 
@@ -109,21 +112,11 @@ function FUNC_entity_load (server_ptr, entity)
 	end
 
 	if (origin) then
-		val = origin;
-		val = string.match(origin, "([%d-%.]*) ([%d-%.]*) ([%d-%.]*)");
-		origin = {};
-		origin.x = val[1];
-		origin.y = val[2];
-		origin.z = val[3];
+		origin = vector.from_string(origin);
 	end
 
 	if (angles) then
-		val = angles;
-		val = string.match(angles, "([%d-%.]*) ([%d-%.]*) ([%d-%.]*)");
-		angles = {};
-		angles.x = val[1];
-		angles.y = val[2];
-		angles.z = val[3];
+		angles = vector.from_string(angles);
 	end
 
 
@@ -136,6 +129,7 @@ function FUNC_entity_load (server_ptr, entity)
 
 	if (classname == 'info_player_deathmatch') then
 		spawns[#spawns + 1] = {}
+		print (origin.x .. " " .. origin.y .. " " .. origin.z);
 		spawns[#spawns]["origin"] = origin;
 		spawns[#spawns]["angle"] = angle;
 		return
@@ -178,7 +172,7 @@ function FUNC_entity_load (server_ptr, entity)
 	end
 
 	if (classname == 'worldspawn') then
-		server.set_map_name(server_ptr, message);
+		server:set_map_name(message);
 		return
 	end
 
@@ -199,16 +193,16 @@ function FUNC_entity_load (server_ptr, entity)
 	print("-------------------------------------------\n");
 end
 
--- used to preload models readin by the map
+-- used to preload models read in by the map
 function FUNC_entity_load_finished (server_ptr)
 	for key, value in pairs(entities) do
-		precached_models[value["model"]] = server.precache_model(server_ptr, value["model"])
+		server.precached_models[value["model"]] = server:precache_model(value["model"])
 		v = edict.get_unused(server_ptr);
 		edicts[v] = {};
 		edicts[v]["e_type"] = "static";
 		edicts[v]["entity"] = value;
 		edicts[v]["entities_index"] = key;
-		edicts[v]["model_index"] = precached_models[value["model"]];
+		edicts[v]["model_index"] = server.precached_models[value["model"]];
 		edict.set_modelindex(v, edicts[v]["model_index"]);
 		if (value["origin"]) then
 			edict.set_origin(v, value.origin.x, value.origin.y, value.origin.z);
@@ -220,6 +214,10 @@ function FUNC_entity_load_finished (server_ptr)
 	end
 end
 
+function FUNC_get_spawn()
+	return spawns[1].origin;
+end
+
 function FUNC_print_info()
 	print("entites info etc:");
 	print("lights: " .. #lights);
@@ -228,4 +226,5 @@ function FUNC_print_info()
 	print("telporters: " .. #teleporter_trigger);
 	print("teleporter_destination: " .. #teleporter_destination);
 end
+
 
