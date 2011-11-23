@@ -30,11 +30,13 @@ struct edict *Server_GetFreeEdict(struct server *server)
 	if (!server)
 		return NULL;
 
-	for (i=0; i<server->edicts_count; i++)
+	for (i=0; i<MAX_EDICTS; i++)
 	{
 		if (server->edicts[i].inuse == false)
 		{
 			server->edicts[i].inuse = true;
+			server->edicts[i].state.number = i;
+			server->edicts[i].baseline.number = i;
 			return &server->edicts[i];
 		}
 	}
@@ -407,7 +409,7 @@ static qboolean Server_WriteDelta(struct server *server, struct client *client, 
 		return false;
 	}
 
-	Client_Write(client, "s", i);
+	Client_Write(client, "S", i);
 
 	if (bits & U_MOREBITS)
 		Client_Write(client, "c", bits&255);
@@ -471,6 +473,7 @@ static void Server_WriteUpdate(struct server *server, struct client *client, str
 
 	newindex = 0;
 	oldindex = 0;
+
 
 	while (newindex < to->entities_count || oldindex < oldmax)
 	{
@@ -538,12 +541,15 @@ static void Server_WriteEntitiesToClient(struct server *server, struct client *c
 
 	Server_WritePlayersToClient(server, client);
 
-	for (i=1+MAX_CLIENTS; i < server->edicts_count; i++, e = &server->edicts[i])
+	for (i=1+MAX_CLIENTS; i < MAX_EDICTS; i++, e = &server->edicts[i])
 	{
 		if (to.entities_count == MAX_PACKET_ENTITIES)
 			continue;
 
 		if (e == NULL)
+			continue;
+
+		if (e->inuse == false)
 			continue;
 
 		memcpy(&to.entities[to.entities_count], &e->state, sizeof(struct entity_state));
@@ -1004,7 +1010,7 @@ static qboolean Server_CreateSignon(struct server *server)
 
 	Log_Print(server->log, log_debug, "Server_CreateSignon edicts: %i", server->edicts_count);
 
-	for (i=1; i<server->edicts_count; i++)
+	for (i=1; i<MAX_EDICTS; i++)
 	{
 		e = &server->edicts[i];
 		if (!e->inuse)
@@ -1020,7 +1026,9 @@ static qboolean Server_CreateSignon(struct server *server)
 		}
 
 		if (server->signon_buffers[server->signon_buffers_count].position > BUFFER_SIZE - 512)
+		{
 			server->signon_buffers_count++;
+		}
 		if (server->signon_buffers_count >= MAX_SIGNON_BUFFERS)
 		{
 			Log_Print(server->log, log_debug, " Server_CreateSignon: real problem...");
@@ -1037,10 +1045,12 @@ static qboolean Server_CreateSignon(struct server *server)
 		Packet_WriteToBuffer(buffer, "c", e->state.colormap);
 		Packet_WriteToBuffer(buffer, "c", e->state.skinnum);
 
+		//printf("%i: %i - %s\n", i, e->state.model_index, server->model_precache[e->state.model_index]);
 		for (x=0; x<3; x++)
 		{
-			Packet_WriteToBuffer(buffer, "C", e->state.origin[i]);
-			Packet_WriteToBuffer(buffer, "A", e->state.angles[i]);
+			//printf("%4.4f - %4.4f\n", e->state.origin[x], e->state.angles[x]);
+			Packet_WriteToBuffer(buffer, "C", e->state.origin[x]);
+			Packet_WriteToBuffer(buffer, "A", e->state.angles[x]);
 		}
 	}
 	return true;

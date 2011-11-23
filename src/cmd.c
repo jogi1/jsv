@@ -132,8 +132,8 @@ void CMD_Modellist(struct server *server, struct client *client, struct tokenize
 
 void CMD_Prespawn(struct server *server, struct client *client, struct tokenized_string *ts)
 {
-	int sc;
-	int buf;
+	unsigned int sc;
+	unsigned int buf;
 	char buffer[1024];
 
 
@@ -141,19 +141,27 @@ void CMD_Prespawn(struct server *server, struct client *client, struct tokenized
 	if (CMD_isinvalidspawncount(server, client, sc))
 		return;
 
-	sc = atoi(ts->tokens[3]);
-	if (sc != server->map->checksum2)
-	{
-		Print_Console("client has wrong map checksum\n");
-		return;
-	}
-
 	buf = atoi(ts->tokens[2]);
 
-	Client_WriteBuffer(client, &server->signon_buffers[server->signon_buffers_count], false);
+	if (buf > server->signon_buffers_count)
+		buf = 0;
+
+
+	if (buf == 0)
+	{
+		sc = atoi(ts->tokens[3]);
+		if (sc != server->map->checksum2)
+		{
+			Print_Console("client has wrong map checksum\n");
+			Server_DropClient(server, client);
+			return;
+		}
+	}
+
+	Client_WriteBuffer(client, &server->signon_buffers[buf], false);
 
 	buf++;
-	if (server->signon_buffers_count == buf)
+	if (server->signon_buffers_count < buf)
 	{
 		snprintf(buffer, sizeof(buffer), "cmd spawn %i 0\n", server->spawn_count);
 		Client_Write(client, "cs", svc_stufftext, buffer);
