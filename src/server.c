@@ -1039,7 +1039,7 @@ static qboolean Server_CreateSignon(struct server *server)
 		Packet_WriteToBuffer(buffer, "c", e->state.colormap);
 		Packet_WriteToBuffer(buffer, "c", e->state.skinnum);
 
-		printf("%i: %i - %s\n", i, e->state.model_index, server->model_precache[e->state.model_index]);
+		printf("%i: %i - %s %i\n", i, e->state.model_index, server->model_precache[e->state.model_index], e->state.skinnum);
 		for (x=0; x<3; x++)
 		{
 			//printf("%4.4f - %4.4f\n", e->state.origin[x], e->state.angles[x]);

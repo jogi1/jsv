@@ -88,6 +88,20 @@ static int EDICT_SetModelIndex(lua_State *L)
 	return 1;
 }
 
+static int EDICT_SetSkinNum(lua_State *L)
+{
+	struct edict *edict;
+	if (lua_isuserdata(L, 1))
+	{
+		edict = lua_touserdata(L, 1);
+		edict->state.skinnum = lua_tonumber(L, 2);
+		lua_pushboolean(L, 1);
+	}
+	else
+		lua_pushboolean(L, 0);
+	return 1;
+}
+
 static luaL_reg Edict_Functions_Methods[] = 
 {
 	{"get_unused", EDICT_GetUnused},
@@ -95,6 +109,7 @@ static luaL_reg Edict_Functions_Methods[] =
 	{"set_angles", EDICT_SetAngles},
 	{"set_modelindex", EDICT_SetModelIndex},
 	{"set_baseline", EDICT_SetBaseline},
+	{"set_skinnum", EDICT_SetSkinNum},
 	{0,0}
 };
 

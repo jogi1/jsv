@@ -18,17 +18,17 @@ items_types = {
 require "vector"
 
 items_types = {
-	item_armorInv ="progs/invulner.mdl",
-	item_health = "maps/b_bh10.bsp",
-	item_armor1 = "progs/armor.mdl",
-	item_armor2 = "progs/armor.mdl",
-	item_cells = "maps/b_batt1.bsp",
-	item_rockets = "maps/b_rock0.bsp",
-	item_spikes = "maps/b_nail0.bsp",
-	weapon_lightning = "progs/g_light.mdl",
-	weapon_grenadelauncher = "progs/g_rock.mdl",
-	weapon_rocketlauncher = "progs/g_rock2.mdl",
-	weapon_supernailgun = "progs/g_nail2.mdl"
+	item_armorInv = {model="progs/armor.mdl", skinnum=2},
+	item_health = {model="maps/b_bh10.bsp"},
+	item_armor1 = {model="progs/armor.mdl", skinnum=0},
+	item_armor2 = {model="progs/armor.mdl", skinnum=1},
+	item_cells = {model="maps/b_batt1.bsp"},
+	item_rockets = {model="maps/b_rock0.bsp"},
+	item_spikes = {model="maps/b_nail0.bsp"},
+	weapon_lightning = {model="progs/g_light.mdl"},
+	weapon_grenadelauncher = {model="progs/g_rock.mdl"},
+	weapon_rocketlauncher = {model="progs/g_rock2.mdl"},
+	weapon_supernailgun = {model="progs/g_nail2.mdl"}
 };
 
 lightstyles = {
@@ -185,7 +185,10 @@ function FUNC_entity_load (server_ptr, entity)
 			entities[#entities + 1] = {}
 			entities[#entities]["type"] = classname;
 			entities[#entities]["origin"] = origin;
-			entities[#entities]["model"] = value;
+			entities[#entities]["model"] = value.model;
+			if (value.skinnum) then
+				entities[#entities]["skinnum"] = value.skinnum;
+			end
 			if (angle) then
 				entities[#entities]["angle"] = angle;
 			end
@@ -215,6 +218,13 @@ function FUNC_entity_load_finished (server_ptr)
 		if (value["angels"]) then
 			edict.set_angels(v, value.angels.x, value.angels.y, value.angels.z);
 		end
+
+		if (value.skinnum) then
+			print("it has a skin: " .. value.model .. " - " .. value.skinnum);
+			edict.set_skinnum(v, value.skinnum);
+		end
+
+		-- this should always be last
 		edict.set_baseline(v);
 	end
 end
