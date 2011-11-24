@@ -1039,7 +1039,7 @@ static qboolean Server_CreateSignon(struct server *server)
 		Packet_WriteToBuffer(buffer, "c", e->state.colormap);
 		Packet_WriteToBuffer(buffer, "c", e->state.skinnum);
 
-		printf("%i: %i - %s %i\n", i, e->state.model_index, server->model_precache[e->state.model_index], e->state.skinnum);
+		//printf("%i: %i - %s %i\n", i, e->state.model_index, server->model_precache[e->state.model_index], e->state.skinnum);
 		for (x=0; x<3; x++)
 		{
 			//printf("%4.4f - %4.4f\n", e->state.origin[x], e->state.angles[x]);
@@ -1076,7 +1076,7 @@ static qboolean Server_LoadMap(struct server *server)
 
 	//precache the map
 	snprintf(buffer, sizeof(buffer), "maps/%s.bsp", server->map_filename);
-	Log_Print(server->log, log_debug, "map precache: %i", Server_PrecacheModel(server, buffer));
+	Log_Print(server->log, log_debug, "map precache: %i", Server_PrecacheModel(server, buffer, true));
 
 	//load it actually
 	Model_MapFree(server->map);
@@ -1086,7 +1086,7 @@ static qboolean Server_LoadMap(struct server *server)
 	e = Server_GetFreeEdict(server);
 	if (!e)
 		return false;
-	e->state.model_index = Server_PrecacheModel(server, buffer);
+	e->state.model_index = Server_PrecacheModel(server, buffer, true);
 
 		if (!server->map)
 	{
@@ -1103,7 +1103,7 @@ static qboolean Server_LoadMap(struct server *server)
 		e->inuse = true;
 	}
 
-	printf("submodels: %i\n", server->map->submodels_count);
+	//printf("submodels: %i\n", server->map->submodels_count);
 
 	for (i=1; i<server->map->submodels_count; i++)
 	{
@@ -1111,11 +1111,11 @@ static qboolean Server_LoadMap(struct server *server)
 		e = Server_GetFreeEdict(server);
 		if (!e)
 			return false;
-		e->state.model_index = Server_PrecacheModel(server, buffer);
+		e->state.model_index = Server_PrecacheModel(server, buffer, true);
 	}
 
 	for (i=0; i<MAX_CLIENTS; i++)
-		server->player_model = server->clients[i].edict->state.model_index = Server_PrecacheModel(server, "progs/player.mdl");
+		server->player_model = server->clients[i].edict->state.model_index = Server_PrecacheModel(server, "progs/player.mdl", true);
 
 	//load entities
 	LUA_CallFunction(server, &server->mod, NULL, "entity_preload");
@@ -1127,11 +1127,12 @@ static qboolean Server_LoadMap(struct server *server)
 		if (server->edicts[i].inuse == false)
 			break;
 
-		printf("%i: %i %s - %f %f %f\n", i, server->edicts[i].state.model_index,
+		/*printf("%i: %i %s - %f %f %f\n", i, server->edicts[i].state.model_index,
 				server->model_precache[server->edicts[i].state.model_index],
 				server->edicts[i].state.origin[0],
 				server->edicts[i].state.origin[1],
 				server->edicts[i].state.origin[2]);
+				*/
 	}
 
 	for (i=0; i<32; i++)
@@ -1146,8 +1147,8 @@ static qboolean Server_LoadMap(struct server *server)
 	LUA_CallFunction(server, &server->mod, NULL, "map_start");
 
 	//get certain models
-	for (i=0; i<server->model_precache_index; i++)
-		printf("%i: %s\n", i, server->model_precache[i]);
+//	for (i=0; i<server->model_precache_index; i++)
+//		printf("%i: %s\n", i, server->model_precache[i]);
 
 	return true;
 }
@@ -1280,7 +1281,7 @@ int Server_PrecacheSound(struct server *server, char *sound)
 	return i;
 }
 
-int Server_PrecacheModel(struct server *server, char *model)
+int Server_PrecacheModel(struct server *server, char *model, qboolean add)
 {
 	int i;
 	if (!server || !model)
@@ -1294,6 +1295,9 @@ int Server_PrecacheModel(struct server *server, char *model)
 		if (strcmp(server->model_precache[i], model) == 0)
 			return i;
 
+	if (!add)
+		return -1;
+
 	i = server->model_precache_index;
 
 	server->model_precache[i] = strdup(model);
@@ -1306,9 +1310,9 @@ int Server_PrecacheModel(struct server *server, char *model)
 	return i;
 }
 
-int Server_PrecacheModelNet(struct server *server, char *model)
+int Server_PrecacheModelNet(struct server *server, char *model, qboolean add)
 {
-	return Server_PrecacheModel(server, model) + 1;
+	return Server_PrecacheModel(server, model, add) + 1;
 }
 
 int Server_AddLightstyle(struct server *server, char *style)
@@ -1340,3 +1344,18 @@ qboolean Server_ClientChangeName(struct server *server, struct client *client, c
 	return true;
 }
 
+struct edict *Server_GetEdictForInlineModel(struct server *server, char *model)
+{
+	int m;
+	if (!server | !model)
+		return NULL;
+
+	if (model[0] != '*')
+		return NULL;
+
+	m = atoi(model+1);
+
+	m++;
+
+	return &server->edicts[MAX_CLIENTS + m];
+}

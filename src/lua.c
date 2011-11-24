@@ -141,6 +141,7 @@ static int SFM_PrecacheModel(lua_State *L)
 {
 	struct server *server;
 	const char *s;
+	qboolean a;
 
 	if (lua_isuserdata(L, 1))
 	{
@@ -148,7 +149,12 @@ static int SFM_PrecacheModel(lua_State *L)
 		if (lua_isstring(L, 2))
 		{
 			s = luaL_checkstring(L, 2);
-			lua_pushnumber(L, Server_PrecacheModelNet(server, (char *)s));
+			if (lua_isboolean(L, 3))
+				a = lua_toboolean(L, 3);
+			else
+				a = false;
+
+			lua_pushnumber(L, Server_PrecacheModelNet(server, (char *)s, a));
 			return 1;
 		}
 	}
@@ -215,6 +221,27 @@ static int SFM_AddLightstyle(lua_State *L)
 	return 1;
 }
 
+static int SFM_GetEdictForOnlineModel(lua_State *L)
+{
+	struct server *server;
+	const char *model;
+	struct edict *edict;
+	if (lua_isuserdata(L, 1))
+	{
+		server = (struct server *)lua_touserdata(L, 1);
+		model = luaL_checkstring(L, 2);
+		edict = Server_GetEdictForInlineModel(server, (char *)model);
+		if (!edict)
+			lua_pushnil(L);
+		else
+			lua_pushlightuserdata(L, edict);
+	}
+	else
+		lua_pushnil(L);
+
+	return 1;
+}
+
 static luaL_reg Server_Functions_Methods[] = 
 {
 	{"__precache_sound", SFM_PrecacheSound},
@@ -222,6 +249,7 @@ static luaL_reg Server_Functions_Methods[] =
 	{"__get_entities_string", SFM_GetEntitiesString},
 	{"__set_map_name", SFM_SetMapName},
 	{"__add_lightstyle", SFM_AddLightstyle},
+	{"__get_edict_for_inline_model", SFM_GetEdictForOnlineModel},
 	{0,0}
 };
 

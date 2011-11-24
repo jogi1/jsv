@@ -67,7 +67,7 @@ end
 function FUNC_entity_preload(server_ptr, client, ...)
 	--preload models and sounds
 	for key, value in pairs(preload_models) do
-		server.precached_models[value] = server:precache_model(value)
+		server.precached_models[value] = server:precache_model(value, true)
 		print(server.precached_models[value] .. " " .. value);
 	end
 
@@ -157,6 +157,7 @@ function FUNC_entity_load (server_ptr, entity)
 		teleporter_trigger[#teleporter_trigger + 1] = {};
 		teleporter_trigger[#teleporter_trigger]["target"] = target;
 		teleporter_trigger[#teleporter_trigger]["model"] = model;
+		print (model);
 		return
 	end
 
@@ -167,6 +168,7 @@ function FUNC_entity_load (server_ptr, entity)
 		trigger_push[#trigger_push]["style"] = style;
 		trigger_push[#trigger_push]["delay"] = delay;
 		trigger_push[#trigger_push]["model"] = model;
+		print (model);
 		return
 	end
 
@@ -203,7 +205,7 @@ end
 -- used to preload models read in by the map
 function FUNC_entity_load_finished (server_ptr)
 	for key, value in pairs(entities) do
-		server.precached_models[value["model"]] = server:precache_model(value["model"])
+		server.precached_models[value["model"]] = server:precache_model(value["model"], true)
 		v = edict.get_unused(server_ptr);
 		edicts[v] = {};
 		edicts[v]["e_type"] = "static";
@@ -220,12 +222,24 @@ function FUNC_entity_load_finished (server_ptr)
 		end
 
 		if (value.skinnum) then
-			print("it has a skin: " .. value.model .. " - " .. value.skinnum);
 			edict.set_skinnum(v, value.skinnum);
 		end
 
 		-- this should always be last
 		edict.set_baseline(v);
+	end
+
+	-- set the models to 0 on triggers and do other trigger setup
+	for key, value in pairs(teleporter_trigger) do
+		e = server:get_edict_for_inline_model(value.model)
+		edict.set_modelindex(e, 0)
+		edict.set_baseline(e);
+	end
+
+	for key, value in pairs(trigger_push) do
+		e = server:get_edict_for_inline_model(value.model)
+		edict.set_modelindex(e, 0)
+		edict.set_baseline(e);
 	end
 end
 

@@ -1,7 +1,7 @@
 
 -- not sure about this
-function server.precache_model (self, model)
-	return self.__precache_model(self.__pointer, model)
+function server.precache_model (self, model, add)
+	return self.__precache_model(self.__pointer, model, add)
 end
 
 function server.precache_sound (self, sound)
@@ -14,4 +14,8 @@ end
 
 function server.add_lightstyle (self, lightstyle)
 	self.__add_lightstyle (self.__pointer, lightstyle)
+end
+
+function server.get_edict_for_inline_model (self, model)
+	return self.__get_edict_for_inline_model(self.__pointer, model)
 end

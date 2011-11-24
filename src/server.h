@@ -412,7 +412,7 @@ struct server
 #include "physics.h"
 
 int Server_PrecacheSound(struct server *server, char *sound);
-int Server_PrecacheModel(struct server *server, char *model);
+int Server_PrecacheModel(struct server *server, char *model, qboolean add);
 int Server_AddLightstyle(struct server *server, char *style);
 struct edict *Server_GetFreeEdict(struct server *server);
 void Server_EdictCreateBaseline(struct edict *edict);
@@ -420,4 +420,6 @@ qboolean Server_ClientChangeName(struct server *server, struct client *client, c
 void Server_DropClient(struct server *server, struct client *client);
 void Server_FullClientUpdateToClient(struct server *server, struct client *client);
 void Server_FullClientUpdate(struct server *server, struct client *client);
-int Server_PrecacheModelNet(struct server *server, char *model);
+int Server_PrecacheModelNet(struct server *server, char *model, qboolean add);
+struct edict *Server_GetEdictForInlineModel(struct server *server, char *model);
+
