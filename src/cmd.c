@@ -97,6 +97,7 @@ void CMD_Modellist(struct server *server, struct client *client, struct tokenize
 	int i;
 	int n, sc;
 	char **s;
+	char buffer[1024];
 
 	sc = atoi(ts->tokens[1]);
 	if (CMD_isinvalidspawncount(server, client, sc))
@@ -106,6 +107,7 @@ void CMD_Modellist(struct server *server, struct client *client, struct tokenize
 	if (n >= MAX_MODELS)
 	{
 		Client_Write(client, "bbs", svc_print, 2, "invalid modellist index!.\n");
+		Server_DropClient(server, client);
 		return;
 	}
 
@@ -122,7 +124,7 @@ void CMD_Modellist(struct server *server, struct client *client, struct tokenize
 		Client_Write(client, "b", n);
 	else
 		Client_Write(client, "b", 0);
-//
+
 	if (0)
 	{
 		for (; i<client->message.position; i++)
@@ -176,7 +178,6 @@ void CMD_Prespawn(struct server *server, struct client *client, struct tokenized
 void CMD_Spawn(struct server *server, struct client *client, struct tokenized_string *ts)
 {
 	int sc, i;
-	int x;
 
 	sc = atoi(ts->tokens[1]);
 	if (CMD_isinvalidspawncount(server, client, sc))

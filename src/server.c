@@ -441,7 +441,6 @@ static qboolean Server_WriteDelta(struct server *server, struct client *client, 
 
 static void Server_WriteUpdate(struct server *server, struct client *client, struct packet_entities *to)
 {
-	int i,x,num;
 	struct edict *e;
 	struct frame *frame, *frame_from;
 	struct packet_entities *from;
@@ -605,7 +604,6 @@ static qboolean Server_CreateFullClientUpdate(struct server *server, struct clie
 {
 	int i;
 	struct buffer info;
-	char *s;
 
 	if (!buffer || !client || !buffer)
 		return false;
@@ -634,7 +632,6 @@ static qboolean Server_CreateFullClientUpdate(struct server *server, struct clie
 void Server_FullClientUpdate(struct server *server, struct client *client)
 {
 	int i;
-	struct client *c;
 	struct buffer update;
 
 	update.position = 0;
@@ -656,7 +653,6 @@ void Server_FullClientUpdate(struct server *server, struct client *client)
 void Server_FullClientUpdateToClient(struct server *server, struct client *client)
 {
 	int i;
-	struct client *c;
 	struct buffer update;
 
 	for (i=0; i<MAX_CLIENTS; i++)
@@ -1045,7 +1041,7 @@ static qboolean Server_CreateSignon(struct server *server)
 		Packet_WriteToBuffer(buffer, "c", e->state.colormap);
 		Packet_WriteToBuffer(buffer, "c", e->state.skinnum);
 
-		//printf("%i: %i - %s\n", i, e->state.model_index, server->model_precache[e->state.model_index]);
+		printf("%i: %i - %s\n", i, e->state.model_index, server->model_precache[e->state.model_index]);
 		for (x=0; x<3; x++)
 		{
 			//printf("%4.4f - %4.4f\n", e->state.origin[x], e->state.angles[x]);
@@ -1061,7 +1057,6 @@ static qboolean Server_LoadMap(struct server *server)
 	int i;
 	char buffer[64];
 	struct edict *e;
-	vec3_t test;
 
 	server->spawn_count++;
 
@@ -1088,11 +1083,6 @@ static qboolean Server_LoadMap(struct server *server)
 	//load it actually
 	Model_MapFree(server->map);
 	server->map = Model_MapLoad(server, buffer);
-	if (!server->map)
-	{
-		Log_Print(server->log, log_main, "ERROR: loading map \"%s\" server will shutdown", buffer);
-		return false;
-	}
 
 	// reserver the first MAX_CLIENTS+1 edicts
 	e = Server_GetFreeEdict(server);
@@ -1100,7 +1090,13 @@ static qboolean Server_LoadMap(struct server *server)
 		return false;
 	e->state.model_index = Server_PrecacheModel(server, buffer);
 
-	for (i=1; i<=MAX_CLIENTS; i++)
+		if (!server->map)
+	{
+		Log_Print(server->log, log_main, "ERROR: loading map \"%s\" server will shutdown", buffer);
+		return false;
+	}
+
+	for (i=0; i<MAX_CLIENTS; i++)
 	{
 		e = Server_GetFreeEdict(server);
 		if (!e)
@@ -1109,7 +1105,19 @@ static qboolean Server_LoadMap(struct server *server)
 		e->inuse = true;
 	}
 
+	printf("submodels: %i\n", server->map->submodels_count);
+
+	for (i=1; i<=server->map->submodels_count; i++)
+	{
+		snprintf(buffer, sizeof(buffer), "*%i", i);
+		e = Server_GetFreeEdict(server);
+		if (!e)
+			return false;
+		e->state.model_index = Server_PrecacheModel(server, buffer);
+	}
+
 	//load entities
+	LUA_CallFunction(server, &server->mod, NULL, "entity_preload");
 	Server_LoadEntities(server, server->map->entity_string);
 	LUA_CallFunction(server, &server->mod, NULL, "entity_load_finished");
 

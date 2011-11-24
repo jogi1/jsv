@@ -61,10 +61,14 @@ teleporter_trigger = {}
 trigger_push = {}
 edicts = {}
 
-function FUNC_map_start (server_ptr, client, ...)
+function FUNC_map_start(server_ptr, client, ...)
+end
+
+function FUNC_entity_preload(server_ptr, client, ...)
 	--preload models and sounds
 	for key, value in pairs(preload_models) do
 		server.precached_models[value] = server:precache_model(value)
+		print(server.precached_models[value] .. " " .. value);
 	end
 
 	for key, value in pairs(preload_sounds) do
@@ -203,6 +207,7 @@ function FUNC_entity_load_finished (server_ptr)
 		edicts[v]["entity"] = value;
 		edicts[v]["entities_index"] = key;
 		edicts[v]["model_index"] = server.precached_models[value["model"]];
+--		print (value["type"] .. " - " .. edicts[v]["model_index"] .. " - " .. value["model"]);
 		edict.set_modelindex(v, edicts[v]["model_index"]);
 		if (value["origin"]) then
 			edict.set_origin(v, value.origin.x, value.origin.y, value.origin.z);

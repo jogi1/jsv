@@ -98,7 +98,7 @@ struct info_relevance info_relevance[] =
 
 qboolean Info_CopyToBuffer(struct info *info, struct buffer *buffer, int flags)
 {
-	int i, j;
+	int i;
 	struct key_val *kv;
 
 	if (!info || !buffer)

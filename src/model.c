@@ -403,13 +403,11 @@ struct submodel *Model_LoadSubmodels(struct lump *lump, unsigned char *base, int
 
 	if (count > MAX_MAP_MODELS)
 	{
-		printf("%i %i %i\n", lump->filelen, lump->fileofs, sizeof(*in));
 		*submodel_count = -1;
 		return NULL;
 	}
 
 	out = calloc(count, sizeof(*out));
-	printf("submodels: %p\n", out);
 	if (out == NULL)
 	{
 		*submodel_count = -1;

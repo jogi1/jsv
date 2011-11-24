@@ -3,7 +3,7 @@
 void Physics_Frame(struct server *server)
 {
 	int i;
-	int x, z;
+	int x;
 	static int j, k;
 	struct client *client;
 	vec3_t forward, right, up;

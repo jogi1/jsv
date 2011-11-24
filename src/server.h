@@ -407,6 +407,7 @@ struct server
 #include "vector.h"
 #include "info.h"
 #include "log.h"
+#include "physics.h"
 
 int Server_PrecacheSound(struct server *server, char *sound);
 int Server_PrecacheModel(struct server *server, char *model);
@@ -416,3 +417,4 @@ void Server_EdictCreateBaseline(struct edict *edict);
 qboolean Server_ClientChangeName(struct server *server, struct client *client, char *newname);
 void Server_DropClient(struct server *server, struct client *client);
 void Server_FullClientUpdateToClient(struct server *server, struct client *client);
+void Server_FullClientUpdate(struct server *server, struct client *client);
