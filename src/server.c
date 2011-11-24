@@ -562,7 +562,6 @@ static void Server_WriteClientsToClient(struct server *server, struct client *cl
 {
 	int i, j, pflags;
 	struct client *c;
-	struct edict *edict;
 	struct entity_state *e;
 
 	for (i=0; i<MAX_CLIENTS; i++)
@@ -574,8 +573,7 @@ static void Server_WriteClientsToClient(struct server *server, struct client *cl
 			continue;
 
 		c = &server->clients[i];
-		edict = &server->edicts[i+1];
-		e = &edict->state;
+		e = &client->edict->state;
 
 		pflags = PF_MSEC | PF_COMMAND;
 
@@ -1101,13 +1099,13 @@ static qboolean Server_LoadMap(struct server *server)
 		e = Server_GetFreeEdict(server);
 		if (!e)
 			return false;
-		server->player_model = e->state.model_index = Server_PrecacheModel(server, "progs/player.mdl");
+		server->clients[i].edict = e;
 		e->inuse = true;
 	}
 
 	printf("submodels: %i\n", server->map->submodels_count);
 
-	for (i=1; i<=server->map->submodels_count; i++)
+	for (i=1; i<server->map->submodels_count; i++)
 	{
 		snprintf(buffer, sizeof(buffer), "*%i", i);
 		e = Server_GetFreeEdict(server);
@@ -1115,6 +1113,9 @@ static qboolean Server_LoadMap(struct server *server)
 			return false;
 		e->state.model_index = Server_PrecacheModel(server, buffer);
 	}
+
+	for (i=0; i<MAX_CLIENTS; i++)
+		server->player_model = server->clients[i].edict->state.model_index = Server_PrecacheModel(server, "progs/player.mdl");
 
 	//load entities
 	LUA_CallFunction(server, &server->mod, NULL, "entity_preload");
@@ -1145,6 +1146,8 @@ static qboolean Server_LoadMap(struct server *server)
 	LUA_CallFunction(server, &server->mod, NULL, "map_start");
 
 	//get certain models
+	for (i=0; i<server->model_precache_index; i++)
+		printf("%i: %s\n", i, server->model_precache[i]);
 
 	return true;
 }
@@ -1301,6 +1304,11 @@ int Server_PrecacheModel(struct server *server, char *model)
 	server->model_precache_index++;
 
 	return i;
+}
+
+int Server_PrecacheModelNet(struct server *server, char *model)
+{
+	return Server_PrecacheModel(server, model) + 1;
 }
 
 int Server_AddLightstyle(struct server *server, char *style)

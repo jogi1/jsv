@@ -117,6 +117,9 @@ void CMD_Modellist(struct server *server, struct client *client, struct tokenize
 	Client_Write(client, "bb", svc_modellist, n);
 	for (s = server->model_precache + n; *s && client->message.position < (MAX_MSGLEN/2); s++, n++)
 	{
+#warning fix this in a different way
+		if (String_Compare(s, "null"))
+			continue;
 		Client_Write(client, "s", *s);
 	}
 	Client_Write(client, "b", 0);

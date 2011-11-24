@@ -133,7 +133,7 @@ static int SFM_PrecacheModel(lua_State *L)
 		if (lua_isstring(L, 2))
 		{
 			s = luaL_checkstring(L, 2);
-			lua_pushnumber(L, Server_PrecacheModel(server, (char *)s));
+			lua_pushnumber(L, Server_PrecacheModelNet(server, (char *)s));
 			return 1;
 		}
 	}

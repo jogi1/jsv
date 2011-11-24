@@ -322,6 +322,8 @@ struct client
 	char name[CLIENT_NAME_MAX];
 	struct info *userinfo;
 
+	struct edict *edict;
+
 };
 
 enum ed_type
@@ -418,3 +420,4 @@ qboolean Server_ClientChangeName(struct server *server, struct client *client, c
 void Server_DropClient(struct server *server, struct client *client);
 void Server_FullClientUpdateToClient(struct server *server, struct client *client);
 void Server_FullClientUpdate(struct server *server, struct client *client);
+int Server_PrecacheModelNet(struct server *server, char *model);
