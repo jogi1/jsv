@@ -242,6 +242,28 @@ static int SFM_GetEdictForOnlineModel(lua_State *L)
 	return 1;
 }
 
+static int SFM_PrintToClient(lua_State *L)
+{
+	struct server *server;
+	struct client *client;
+	const char *s;
+
+	if (lua_isuserdata(L, 1))
+	{
+		server = lua_touserdata(L, 1);
+		if (lua_isuserdata(L, 2))
+		{
+			client = lua_touserdata(L, 2);
+			if (lua_isstring(L, 3))
+			{
+				s = lua_tostring(L, 3);
+				Print_ToClient(client, false, 3, s);
+			}
+		}
+	}
+	return 1;
+}
+
 static luaL_reg Server_Functions_Methods[] = 
 {
 	{"__precache_sound", SFM_PrecacheSound},
@@ -250,6 +272,7 @@ static luaL_reg Server_Functions_Methods[] =
 	{"__set_map_name", SFM_SetMapName},
 	{"__add_lightstyle", SFM_AddLightstyle},
 	{"__get_edict_for_inline_model", SFM_GetEdictForOnlineModel},
+	{"__print_to_client", SFM_PrintToClient},
 	{0,0}
 };
 

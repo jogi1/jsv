@@ -19,3 +19,7 @@ end
 function server.get_edict_for_inline_model (self, model)
 	return self.__get_edict_for_inline_model(self.__pointer, model)
 end
+
+function server.print_to_client(self, client, str)
+	self.__print_to_client(self.__pointer, client, str)
+end

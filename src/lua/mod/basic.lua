@@ -23,12 +23,14 @@ items_types = {
 	item_armor1 = {model="progs/armor.mdl", skinnum=0},
 	item_armor2 = {model="progs/armor.mdl", skinnum=1},
 	item_cells = {model="maps/b_batt1.bsp"},
+	item_shells= {model="maps/b_shell0.bsp"},
 	item_rockets = {model="maps/b_rock0.bsp"},
 	item_spikes = {model="maps/b_nail0.bsp"},
 	weapon_lightning = {model="progs/g_light.mdl"},
 	weapon_grenadelauncher = {model="progs/g_rock.mdl"},
 	weapon_rocketlauncher = {model="progs/g_rock2.mdl"},
-	weapon_supernailgun = {model="progs/g_nail2.mdl"}
+	weapon_supernailgun = {model="progs/g_nail2.mdl"},
+	weapon_supershotgun = {model="progs/g_shot.mdl"}
 };
 
 lightstyles = {
@@ -59,6 +61,7 @@ player_start = {}
 teleporter_destination = {}
 teleporter_trigger = {}
 trigger_push = {}
+trigger_hurt = {}
 edicts = {}
 
 function FUNC_map_start(server_ptr, client, ...)
@@ -110,6 +113,8 @@ function FUNC_entity_load (server_ptr, entity)
 			spawnflags = value;
 		elseif (field == 'message') then
 			message = value;
+		elseif (field == 'dmg') then
+			dmg = value;
 		else
 			print(field .. " - " .. value );
 		end
@@ -157,7 +162,6 @@ function FUNC_entity_load (server_ptr, entity)
 		teleporter_trigger[#teleporter_trigger + 1] = {};
 		teleporter_trigger[#teleporter_trigger]["target"] = target;
 		teleporter_trigger[#teleporter_trigger]["model"] = model;
-		print (model);
 		return
 	end
 
@@ -168,9 +172,17 @@ function FUNC_entity_load (server_ptr, entity)
 		trigger_push[#trigger_push]["style"] = style;
 		trigger_push[#trigger_push]["delay"] = delay;
 		trigger_push[#trigger_push]["model"] = model;
-		print (model);
 		return
 	end
+
+	if (classname == 'trigger_hurt') then
+		trigger_hurt[#trigger_hurt + 1] = {};
+		trigger_hurt[#trigger_hurt]["damage"] = dmg;
+		trigger_hurt[#trigger_hurt]["model"] = model;
+		return
+	end
+
+
 
 	if (classname == 'info_player_start') then
 		player_start["origin"] = origin;
@@ -241,6 +253,13 @@ function FUNC_entity_load_finished (server_ptr)
 		edict.set_modelindex(e, 0)
 		edict.set_baseline(e);
 	end
+
+	for key, value in pairs(trigger_hurt) do
+		e = server:get_edict_for_inline_model(value.model)
+		edict.set_modelindex(e, 0)
+		edict.set_baseline(e);
+	end
+
 end
 
 function FUNC_get_spawn()
@@ -254,6 +273,32 @@ function FUNC_print_info()
 	print("entities: " .. #entities);
 	print("telporters: " .. #teleporter_trigger);
 	print("teleporter_destination: " .. #teleporter_destination);
+end
+
+function FUNC_print_var (server_ptr, client, trigger)
+	local test = _G[trigger];
+	if (test == nil) then
+		server:print_to_client(client, trigger .. " is not defined\n");
+		return;
+	end
+	
+	if (type(test) == "table") then
+		server:print_to_client(client, trigger .. " is a table\n");
+		local s = string.format("%10s - %10s\n", "key", "value");
+		server:print_to_client(client, s);
+		for k, v in pairs(test) do
+			local s = string.format("%10s - %10s\n", tostring(k), tostring(v));
+			server:print_to_client(client, s);
+			if (type(v) == "table") then
+				for k1, v1 in pairs(v) do
+					local s = string.format("  %10s - %10s\n", tostring(k1), tostring(v1));
+					server:print_to_client(client, s);
+				end
+			end
+		end
+
+	end
+
 end
 
 

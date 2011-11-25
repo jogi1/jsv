@@ -778,28 +778,30 @@ static void CLC_StringCmd(struct server *server, struct client *client, struct p
 	ts = Tokenize_String(string);
 	if (ts)
 	{
-		if (String_Compare(ts->tokens[0], "say"))
-			CMD_Say(server, client, ts);
-		else if (String_Compare(ts->tokens[0], "new"))
-			CMD_New(server, client, ts);
-		else if (String_Compare(ts->tokens[0], "soundlist"))
-			CMD_Soundlist(server, client, ts);
-		else if (String_Compare(ts->tokens[0], "modellist"))
-			CMD_Modellist(server, client, ts);
-		else if (String_Compare(ts->tokens[0], "prespawn"))
-			CMD_Prespawn(server, client, ts);
-		else if (String_Compare(ts->tokens[0], "spawn"))
-			CMD_Spawn(server, client, ts);
-		else if (String_Compare(ts->tokens[0], "begin"))
-			CMD_Begin(server, client, ts);
-		else if (String_Compare(ts->tokens[0], "drop"))
-			CMD_Drop(server, client, ts);
-		else if (String_Compare(ts->tokens[0], "setinfo"))
-			CMD_Setinfo(server, client, ts);
-		else if (String_Compare(ts->tokens[0], "download"))
-			CMD_Download(server, client, ts);
 
-		LUA_CallFunctionTokens(server, &server->mod, client, ts->tokens[0], ts, 1);
+		if (!LUA_CallFunctionTokens(server, &server->mod, client, ts->tokens[0], ts, 1))
+		{
+			if (String_Compare(ts->tokens[0], "say"))
+				CMD_Say(server, client, ts);
+			else if (String_Compare(ts->tokens[0], "new"))
+				CMD_New(server, client, ts);
+			else if (String_Compare(ts->tokens[0], "soundlist"))
+				CMD_Soundlist(server, client, ts);
+			else if (String_Compare(ts->tokens[0], "modellist"))
+				CMD_Modellist(server, client, ts);
+			else if (String_Compare(ts->tokens[0], "prespawn"))
+				CMD_Prespawn(server, client, ts);
+			else if (String_Compare(ts->tokens[0], "spawn"))
+				CMD_Spawn(server, client, ts);
+			else if (String_Compare(ts->tokens[0], "begin"))
+				CMD_Begin(server, client, ts);
+			else if (String_Compare(ts->tokens[0], "drop"))
+				CMD_Drop(server, client, ts);
+			else if (String_Compare(ts->tokens[0], "setinfo"))
+				CMD_Setinfo(server, client, ts);
+			else if (String_Compare(ts->tokens[0], "download"))
+				CMD_Download(server, client, ts);
+		}
 
 		Tokenize_String_Delete(ts);
 	}
@@ -1244,7 +1246,7 @@ int main (int argc, char *argv[])
 			{
 				if(NET_Init(server))
 				{
-					Server_ChangeMap(server, "aerowalk");
+					Server_ChangeMap(server, "skull");
 					Log_Print(server->log, log_main, "Starting Server on: %s:%i\n", server->ip? server->ip : "any", server->port);
 					server->run = true;
 					while (server->run)
