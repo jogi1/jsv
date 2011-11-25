@@ -52,18 +52,19 @@ preload_models = {"progs/player.mdl"}
 preload_sounds = {"player/plyrjmp8.wav", "player/h2ojump.wav"}
 server.precached_models = {}
 server.precached_sounds = {}
-static_entities = {}
-lights = {}
-entities = {}
-spawns = {}
-intermission = {}
-player_start = {}
-teleporter_destination = {}
-teleporter_trigger = {}
-trigger_push = {}
-trigger_hurt = {}
-edicts = {}
-testvar = 0;
+server.static_entities = {}
+server.lights = {}
+server.entities = {}
+server.spawns = {}
+server.intermission = {}
+server.player_start = {}
+server.doors = {}
+server.teleporter_destination = {}
+server.teleporter_trigger = {}
+server.trigger_push = {}
+server.trigger_hurt = {}
+server.trigger_multiple = {}
+server.edicts = {}
 
 function FUNC_map_start(server_ptr, client, ...)
 end
@@ -94,98 +95,90 @@ function FUNC_entity_load (server_ptr, entity)
 		if (field == 'classname') then
 			lent.classname = value;
 		elseif (field == 'origin') then
-			lent.origin = value;
-		elseif (field == 'light') then
-			lent.light = value;
-		elseif (field == 'mangle') then
-			lent.mangle = value;
+			lent.origin = vector.from_string(value);
 		elseif (field == 'angle') then
-			lent.angle = value;
-		elseif (field == 'model') then
-			lent.model = value;
-		elseif (field == 'targetname') then
-			lent.targetname = value;
-		elseif (field == 'target') then
-			lent.target = value;
-		elseif (field == 'speed') then
-			lent.speed = value;
-		elseif (field == 'style') then
-			lent.style = value;
-		elseif (field == 'delay') then
-			lent.delay = value;
-		elseif (field == 'spawnflags') then
-			lent.spawnflags = value;
-		elseif (field == 'message') then
-			lent.message = value;
+			lent.angle = vector.from_string(value);
 		elseif (field == 'dmg') then
-			lent.dmg = value;
+			lent.damage = value;
 		else
-			print("unknown: " .. field .. " - " .. value );
+			lent[field] = value;
 		end
 	end
 
-	if (lent.origin) then
-		lent.origin = vector.from_string(lent.origin);
-	end
-
-	if (lent.angles) then
-		lent.angles = vector.from_string(lent.angles);
-	end
-
-
 	if (lent.classname == 'light') then
-		lights[#lights + 1] = lent;
+		server.lights[#server.lights + 1] = lent;
 		return;
 	end
 
 	if (lent.classname == 'info_player_deathmatch') then
-		spawns[#spawns + 1] = lent;
+		server.spawns[#server.spawns + 1] = lent;
 		return
 	end
 
 	if (lent.classname == 'info_intermission') then
-		intermission = lent;
+		server.intermission = lent;
 		return
 	end
 
 	if (lent.classname == 'info_teleport_destination') then
-		teleporter_destination[#teleporter_destination + 1] = lent;
+		server.teleporter_destination[#server.teleporter_destination + 1] = lent;
 		return
 	end
 
 	if (lent.classname == 'trigger_teleport') then
-		teleporter_trigger[#teleporter_trigger + 1] = lent;
+		server.teleporter_trigger[#server.teleporter_trigger + 1] = lent;
+		return
+	end
+
+	if (lent.classname == 'trigger_multiple') then
+		server.trigger_multiple[#server.trigger_multiple + 1] = lent;
 		return
 	end
 
 	if (lent.classname == 'trigger_push') then
-		trigger_push[#trigger_push + 1] = lent;
+		server.trigger_push[#server.trigger_push + 1] = lent;
 		return
 	end
 
 	if (lent.classname == 'trigger_hurt') then
-		trigger_hurt[#trigger_hurt + 1] = lent;
+		server.trigger_hurt[#server.trigger_hurt + 1] = lent;
+		return
+	end
+
+	if (lent.classname == 'trigger_hurt') then
+		server.target_multiple[#server.trigger_multiple + 1] = lent;
+		return
+	end
+
+	if (lent.classname == 'trigger_hurt') then
+		server.target_multiple[#server.trigger_multiple + 1] = lent;
+		return
+	end
+
+	if (lent.classname == 'func_door') then
+		server.doors[#server.doors + 1] = lent;
 		return
 	end
 
 
 
 	if (lent.classname == 'info_player_start') then
-		player_start = lent;
+		server.player_start = lent;
 		return
 	end
 
 	if (lent.classname == 'worldspawn') then
+		server.map_name = lent.message;
 		server:set_map_name(lent.message);
 		return
 	end
 
 	for key, value in pairs(items_types) do
 		if (lent.classname == key) then
-			entities[#entities] = lent;
-			entities[#entities]["model"] = value.model;
+			server.entities[#server.entities] = lent;
+			server.entities[#server.entities]["model"] = value.model;
 			if (value.skinnum) then
-				entities[#entities]["skinnum"] = value.skinnum;
+				server.entities[#server.entities]["skinnum"] = value.skinnum;
 			end
 			return
 		end
@@ -199,16 +192,16 @@ end
 function FUNC_entity_load_finished (server_ptr)
 	local key, value;
 	local v, e;
-	for key, value in pairs(entities) do
+	for key, value in pairs(server.entities) do
 		server.precached_models[value["model"]] = server:precache_model(value["model"], true)
 		v = edict.get_unused(server_ptr);
-		edicts[v] = {};
-		edicts[v]["e_type"] = "static";
-		edicts[v]["entity"] = value;
-		edicts[v]["entities_index"] = key;
-		edicts[v]["model_index"] = server.precached_models[value["model"]];
+		server.edicts[v] = {};
+		server.edicts[v]["e_type"] = "static";
+		server.edicts[v]["entity"] = value;
+		server.edicts[v]["entities_index"] = key;
+		server.edicts[v]["model_index"] = server.precached_models[value["model"]];
 --		print (value["type"] .. " - " .. edicts[v]["model_index"] .. " - " .. value["model"]);
-		edict.set_modelindex(v, edicts[v]["model_index"]);
+		edict.set_modelindex(v, server.edicts[v]["model_index"]);
 		if (value["origin"]) then
 			edict.set_origin(v, value.origin.x, value.origin.y, value.origin.z);
 		end
@@ -225,19 +218,19 @@ function FUNC_entity_load_finished (server_ptr)
 	end
 
 	-- set the models to 0 on triggers and do other trigger setup
-	for key, value in pairs(teleporter_trigger) do
+	for key, value in pairs(server.teleporter_trigger) do
 		e = server:get_edict_for_inline_model(value.model)
 		edict.set_modelindex(e, 0)
 		edict.set_baseline(e);
 	end
 
-	for key, value in pairs(trigger_push) do
+	for key, value in pairs(server.trigger_push) do
 		e = server:get_edict_for_inline_model(value.model)
 		edict.set_modelindex(e, 0)
 		edict.set_baseline(e);
 	end
 
-	for key, value in pairs(trigger_hurt) do
+	for key, value in pairs(server.trigger_hurt) do
 		e = server:get_edict_for_inline_model(value.model)
 		edict.set_modelindex(e, 0)
 		edict.set_baseline(e);
@@ -246,28 +239,41 @@ function FUNC_entity_load_finished (server_ptr)
 end
 
 function FUNC_get_spawn()
-	return spawns[1].origin;
+	return server.spawns[1].origin;
 end
 
 function FUNC_print_info()
 	print("entites info etc:");
-	print("lights: " .. #lights);
-	print("spawns: " .. #spawns);
-	print("entities: " .. #entities);
-	print("telporters: " .. #teleporter_trigger);
-	print("teleporter_destination: " .. #teleporter_destination);
+	print("lights: " .. #server.lights);
+	print("spawns: " .. #server.spawns);
+	print("entities: " .. #server.entities);
+	print("telporters: " .. #server.teleporter_trigger);
+	print("teleporter_destination: " .. #server.teleporter_destination);
 end
 
-function FUNC_print_var (server_ptr, client, trigger)
-	local test = _G[trigger];
+function FUNC_print_var (server_ptr, client, first, ...)
+	local test = _G[first];
 	local k, v, k1, v1;
+
 	if (test == nil) then
-		server:print_to_client(client, trigger .. " is not defined\n");
+		server:print_to_client(client, first .. " is not defined\n");
 		return;
 	end
+
+	for k, v in ipairs(arg) do
+		if (v:sub(1,1) == "i") then
+			v = tonumber(v:sub(2));
+		end
+		test = test[v];
+		if (test == nil) then
+			server:print_to_client(client, tostring(v) .. " is not defined\n");
+			return;
+		end
+	end
+
 	
 	if (type(test) == "table") then
-		server:print_to_client(client, trigger .. " is a table\n");
+		server:print_to_client(client, tostring(test) .. " is a table\n");
 		local s = string.format("%10s - %10s\n", "key", "value");
 		server:print_to_client(client, s);
 		for k, v in pairs(test) do
@@ -281,11 +287,8 @@ function FUNC_print_var (server_ptr, client, trigger)
 			end
 		end
 	else
-		server:print_to_client(client, trigger .. "is a " .. tostring(type(test)) .. ": " .. tostring(test) .. "\n")
+		server:print_to_client(client, first .. "is a " .. tostring(type(test)) .. ": " .. tostring(test) .. "\n")
 	end
-
-
-
 end
 
 
