@@ -240,7 +240,7 @@ struct usercmd
 
 struct buffer
 {
-	char data[BUFFER_SIZE];
+	unsigned char data[BUFFER_SIZE];
 	int position;
 };
 
@@ -316,6 +316,7 @@ struct client
 	struct buffer *reliable_buffer;	//points to either message, if there is space, or a backbuffer
 	int backbuffer_count;
 	struct buffer packet;
+	struct buffer oob_print;
 	struct frame frames[UPDATE_BACKUP];
 
 	char *fulluserinfo;

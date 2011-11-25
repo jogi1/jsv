@@ -257,12 +257,47 @@ static int SFM_PrintToClient(lua_State *L)
 			if (lua_isstring(L, 3))
 			{
 				s = lua_tostring(L, 3);
-				Print_ToClient(client, false, 3, s);
+				Print_ToClient(client, true, 3, s);
 			}
 		}
 	}
 	return 1;
 }
+
+/*
+static int SFM_PrintToClientOOB(lua_State *L)
+{
+	struct server *server;
+	struct client *client;
+	const char *s;
+	qboolean flush;
+
+	if (lua_isuserdata(L, 1))
+	{
+		server = lua_touserdata(L, 1);
+		if (lua_isuserdata(L, 2))
+		{
+			client = lua_touserdata(L, 2);
+			flush = false;
+			s = NULL;
+			if (lua_isstring(L, 3))
+			{
+				s = lua_tostring(L, 3);
+			}
+			else if (lua_isboolean(L, 3))
+			{
+				flush = lua_toboolean(L, 3);
+				if (lua_isstring(L, 4))
+					s = lua_tostring(L, 4);
+				else
+					s = NULL;
+			}
+			Print_ToClientOOB(server, client, flush, s);
+		}
+	}
+	return 1;
+}
+*/
 
 static luaL_reg Server_Functions_Methods[] = 
 {

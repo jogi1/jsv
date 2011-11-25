@@ -11,4 +11,5 @@ char *File_Read(char *name, int *length);
 double Tools_DoubleTime(struct server *server);
 void Print_ToAll(struct server *server, qboolean reliable, int level,  char *format, ...);
 void Print_ToClient(struct client *client, qboolean reliable, int level, char *format, ...);
+void Print_ToClientOOB(struct server *server, struct client *client, qboolean flush, char *format, ...);
 #endif

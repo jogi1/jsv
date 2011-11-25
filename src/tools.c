@@ -193,7 +193,7 @@ void Print_ToAll(struct server *server, qboolean reliable, int level,  char *for
 		return;
 
 	va_start(argptr, format);
-	buffer.position = vsnprintf(buffer.data, BUFFER_SIZE, format, argptr);
+	buffer.position = vsnprintf((char *)&buffer.data[0], BUFFER_SIZE, format, argptr);
 	va_end(argptr);
 
 	if (reliable)
@@ -211,7 +211,7 @@ void Print_ToClient(struct client *client, qboolean reliable, int level, char *f
 		return;
 
 	va_start(argptr, format);
-	buffer.position = vsnprintf(buffer.data, BUFFER_SIZE, format, argptr);
+	buffer.position = vsnprintf((char *)&buffer.data[0], BUFFER_SIZE, format, argptr);
 	va_end(argptr);
 
 	if (reliable)
@@ -219,3 +219,73 @@ void Print_ToClient(struct client *client, qboolean reliable, int level, char *f
 	else
 		Client_Write(client, "ccs", svc_print, level, buffer.data);
 }
+
+void Print_ToClientOOB(struct server *server, struct client *client, qboolean flush, char *format, ...)
+{
+	va_list argptr;
+	char buffer[BUFFER_SIZE];
+	int size;
+	int i;
+	char *packet;
+	int packet_size;
+
+	if (!client || !server)
+		return;
+
+	if (client->oob_print.position == 0)
+	{
+		Packet_WriteToBuffer(&client->oob_print, "ob", A2C_PRINT);
+	}
+
+	if (!format && flush)
+	{
+		for (i=0; i<5; i++)
+			printf("%X ", client->oob_print.data[i]);
+		printf("\n");
+		printf("sending 3 %i\n", client->oob_print.position);
+		if (client->oob_print.position > 5)
+			NET_Send(server->net, client->oob_print.data, client->oob_print.position, &client->address);
+		client->oob_print.position = 0;
+		return;
+	}
+
+	if (!format)
+		return;
+
+	va_start(argptr, format);
+	size = vsnprintf(buffer, BUFFER_SIZE - 5 , format, argptr);
+	va_end(argptr);
+
+
+	if (size > BUFFER_SIZE - client->oob_print.position)
+	{
+		for (i=0; i<5; i++)
+			printf("%X ", client->oob_print.data[i]);
+		printf("\n");
+		printf("sending 1 %i\n", client->oob_print.position);
+		NET_Send(server->net, client->oob_print.data, client->oob_print.position, &client->address);
+		client->oob_print.position = 0;
+	}
+
+	{
+		memcpy(client->oob_print.data + client->oob_print.position, buffer, size);
+		client->oob_print.position += size;
+		client->oob_print.data[client->oob_print.position+1] = '\0';
+	}
+
+	if (flush)
+	{
+		for (i=0; i<5; i++)
+			printf("%X ", client->oob_print.data[i]);
+		printf("\n");
+		printf("sending 2 %i\n", client->oob_print.position);
+		printf("%s\n", client->oob_print.data +5);
+		NET_Send(server->net, client->oob_print.data, client->oob_print.position, &client->address);
+		client->oob_print.position = 0;
+		packet = (char *)Packet_Create(&packet_size, "ics", HEADER_ID, A2C_PRINT, "\nTTTEEEEST!\n");
+		printf("%i\n", NET_Send(server->net, packet, packet_size, &client->address));
+		free(packet);
+		return;
+	}
+}
+

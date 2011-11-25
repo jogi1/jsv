@@ -63,15 +63,16 @@ teleporter_trigger = {}
 trigger_push = {}
 trigger_hurt = {}
 edicts = {}
+testvar = 0;
 
 function FUNC_map_start(server_ptr, client, ...)
 end
 
 function FUNC_entity_preload(server_ptr, client, ...)
 	--preload models and sounds
+	local key, value;
 	for key, value in pairs(preload_models) do
 		server.precached_models[value] = server:precache_model(value, true)
-		print(server.precached_models[value] .. " " .. value);
 	end
 
 	for key, value in pairs(preload_sounds) do
@@ -84,127 +85,107 @@ function FUNC_entity_preload(server_ptr, client, ...)
 end
 
 function FUNC_entity_load (server_ptr, entity)
-	origin = nil;
-	angle = nil;
+	local lent = {};
+	local field = nil;
+	local value = nil;
+	local key = nil;
+
 	for field, value in string.gmatch(entity, "\"([^\".]*)\" \"([^\".]*)\"") do
 		if (field == 'classname') then
-			classname = value;
+			lent.classname = value;
 		elseif (field == 'origin') then
-			origin = value;
+			lent.origin = value;
 		elseif (field == 'light') then
-			light = value;
+			lent.light = value;
 		elseif (field == 'mangle') then
-			mangle = value;
+			lent.mangle = value;
 		elseif (field == 'angle') then
-			angle = value;
+			lent.angle = value;
 		elseif (field == 'model') then
-			model = value;
+			lent.model = value;
 		elseif (field == 'targetname') then
-			targetname = value;
+			lent.targetname = value;
 		elseif (field == 'target') then
-			target = value;
+			lent.target = value;
 		elseif (field == 'speed') then
-			speed = value;
+			lent.speed = value;
 		elseif (field == 'style') then
-			style = value;
+			lent.style = value;
 		elseif (field == 'delay') then
-			delay = value;
+			lent.delay = value;
 		elseif (field == 'spawnflags') then
-			spawnflags = value;
+			lent.spawnflags = value;
 		elseif (field == 'message') then
-			message = value;
+			lent.message = value;
 		elseif (field == 'dmg') then
-			dmg = value;
+			lent.dmg = value;
 		else
-			print(field .. " - " .. value );
+			print("unknown: " .. field .. " - " .. value );
 		end
 	end
 
-	if (origin) then
-		origin = vector.from_string(origin);
+	if (lent.origin) then
+		lent.origin = vector.from_string(lent.origin);
 	end
 
-	if (angles) then
-		angles = vector.from_string(angles);
+	if (lent.angles) then
+		lent.angles = vector.from_string(lent.angles);
 	end
 
 
-	if (classname == 'light') then
-		lights[#lights + 1] = {}
-		lights[#lights]["origin"] = origin;
-		lights[#lights]["light"] = light;
+	if (lent.classname == 'light') then
+		lights[#lights + 1] = lent;
 		return;
 	end
 
-	if (classname == 'info_player_deathmatch') then
-		spawns[#spawns + 1] = {}
-		print (origin.x .. " " .. origin.y .. " " .. origin.z);
-		spawns[#spawns]["origin"] = origin;
-		spawns[#spawns]["angle"] = angle;
+	if (lent.classname == 'info_player_deathmatch') then
+		spawns[#spawns + 1] = lent;
 		return
 	end
 
-	if (classname == 'info_intermission') then
-		intermission["mangle"] = mangle;
-		intermission["origin"] = origin;
+	if (lent.classname == 'info_intermission') then
+		intermission = lent;
 		return
 	end
 
-	if (classname == 'info_teleport_destination') then
-		teleporter_destination[#teleporter_destination + 1] = {};
-		teleporter_destination[#teleporter_destination]["angle"] = angle;
-		teleporter_destination[#teleporter_destination]["name"] = targetname;
-		teleporter_destination[#teleporter_destination]["origin"] = targetname;
+	if (lent.classname == 'info_teleport_destination') then
+		teleporter_destination[#teleporter_destination + 1] = lent;
 		return
 	end
 
-	if (classname == 'trigger_teleport') then
-		teleporter_trigger[#teleporter_trigger + 1] = {};
-		teleporter_trigger[#teleporter_trigger]["target"] = target;
-		teleporter_trigger[#teleporter_trigger]["model"] = model;
+	if (lent.classname == 'trigger_teleport') then
+		teleporter_trigger[#teleporter_trigger + 1] = lent;
 		return
 	end
 
-	if (classname == 'trigger_push') then
-		trigger_push[#trigger_push + 1] = {};
-		trigger_push[#trigger_push]["angle"] = angle;
-		trigger_push[#trigger_push]["speed"] = speed;
-		trigger_push[#trigger_push]["style"] = style;
-		trigger_push[#trigger_push]["delay"] = delay;
-		trigger_push[#trigger_push]["model"] = model;
+	if (lent.classname == 'trigger_push') then
+		trigger_push[#trigger_push + 1] = lent;
 		return
 	end
 
-	if (classname == 'trigger_hurt') then
-		trigger_hurt[#trigger_hurt + 1] = {};
-		trigger_hurt[#trigger_hurt]["damage"] = dmg;
-		trigger_hurt[#trigger_hurt]["model"] = model;
+	if (lent.classname == 'trigger_hurt') then
+		trigger_hurt[#trigger_hurt + 1] = lent;
 		return
 	end
 
 
 
-	if (classname == 'info_player_start') then
-		player_start["origin"] = origin;
+	if (lent.classname == 'info_player_start') then
+		player_start = lent;
 		return
 	end
 
-	if (classname == 'worldspawn') then
-		server:set_map_name(message);
+	if (lent.classname == 'worldspawn') then
+		server:set_map_name(lent.message);
 		return
 	end
 
 	for key, value in pairs(items_types) do
-		if (classname == key) then
-			entities[#entities + 1] = {}
-			entities[#entities]["type"] = classname;
-			entities[#entities]["origin"] = origin;
+		if (lent.classname == key) then
+			entities[#entities] = lent;
 			entities[#entities]["model"] = value.model;
 			if (value.skinnum) then
 				entities[#entities]["skinnum"] = value.skinnum;
-			end
-			if (angle) then
-				entities[#entities]["angle"] = angle;
 			end
 			return
 		end
@@ -216,6 +197,8 @@ end
 
 -- used to preload models read in by the map
 function FUNC_entity_load_finished (server_ptr)
+	local key, value;
+	local v, e;
 	for key, value in pairs(entities) do
 		server.precached_models[value["model"]] = server:precache_model(value["model"], true)
 		v = edict.get_unused(server_ptr);
@@ -277,6 +260,7 @@ end
 
 function FUNC_print_var (server_ptr, client, trigger)
 	local test = _G[trigger];
+	local k, v, k1, v1;
 	if (test == nil) then
 		server:print_to_client(client, trigger .. " is not defined\n");
 		return;
@@ -296,8 +280,11 @@ function FUNC_print_var (server_ptr, client, trigger)
 				end
 			end
 		end
-
+	else
+		server:print_to_client(client, trigger .. "is a " .. tostring(type(test)) .. ": " .. tostring(test) .. "\n")
 	end
+
+
 
 end
 

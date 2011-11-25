@@ -491,6 +491,9 @@ int Packet_GetSizeV(const char *format, va_list *argptr_in)
 				sval = va_arg(argptr, char *);
 				size += strlen(sval);
 				break;
+			case 'o':
+				size += 4;
+				break;
 			default:
 				Print_Console("invalid type \'%c\' in format_string\n", *f);
 				va_end(argptr);
@@ -592,6 +595,11 @@ qboolean Packet_WriteToBufferV(struct buffer *buffer, const char *format, va_lis
 				sval = (char *)va_arg(argptr, int);
 				memcpy(buffer->data + buffer->position, (const void *)sval, strlen(sval));
 				buffer->position += strlen(sval);
+				break;
+			case 'o':
+				ival = HEADER_ID;
+				memcpy(buffer->data + buffer->position, (const void*)&ival, sizeof(int));
+				buffer->position += 4;
 				break;
 			default:
 				Print_Console("invalid type \'%c\' in format_string\n", *f);

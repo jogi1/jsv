@@ -17,6 +17,6 @@ qboolean Client_WriteReliable(struct client *client, const char *format, ...);
 qboolean Client_Write(struct client *client, const char *format, ...);
 qboolean Client_WriteBuffer(struct client *client, struct buffer *buffer, qboolean failonsize);
 qboolean Client_RemoveBackbuffer(struct client *client);
-void Send_ToAll (struct server *server , const char *format, ...);
-void SendReliable_ToAll (struct server *server , const char *format, ...);
+void Send_ToAll (struct server *server, const char *format, ...);
+void SendReliable_ToAll (struct server *server, const char *format, ...);
 #endif

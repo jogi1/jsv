@@ -23,3 +23,4 @@ end
 function server.print_to_client(self, client, str)
 	self.__print_to_client(self.__pointer, client, str)
 end
+
