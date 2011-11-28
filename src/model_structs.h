@@ -181,12 +181,14 @@ struct map
 	int nodes_count;
 	struct clipnode *clipnodes;
 	int clipnodes_count;
-	struct submodel *submodels;
+	struct submodel submodels[MAX_MAP_MODELS];
 	int submodels_count;
 	int vis_rowbytes, vis_rowlongs;
 	unsigned char *pvs;
 	unsigned char *phs;
 	unsigned char novis[MAX_MAP_LEAFS/8];
+
+	vec3_t mins, max;
 };
 
 struct pvs

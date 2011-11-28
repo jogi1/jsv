@@ -10,6 +10,7 @@
 #include "pthread.h"
 #include "lua_structs.h"
 #include "log_structs.h"
+#include "world_structs.h"
 
 #define MAX_SOUNDS 256
 #define MAX_MODELS 256
@@ -336,8 +337,47 @@ enum ed_type
 };
 
 
-#define MAX_ENT_LEAFS 16
+#define	MOVETYPE_NONE			0		// never moves
+#define	MOVETYPE_ANGLENOCLIP		1
+#define	MOVETYPE_ANGLECLIP		2
+#define	MOVETYPE_WALK			3		// gravity
+#define	MOVETYPE_STEP			4		// gravity, special edge handling
+#define	MOVETYPE_FLY			5
+#define	MOVETYPE_TOSS			6		// gravity
+#define	MOVETYPE_PUSH			7		// no clip to world, push and crush
+#define	MOVETYPE_NOCLIP			8
+#define	MOVETYPE_FLYMISSILE		9		// extra size to monsters
+#define	MOVETYPE_BOUNCE			10
+#define	MOVETYPE_LOCK			15		// server controls view angles
 
+// edict->solid values
+#define	SOLID_NOT			0		// no interaction with other objects
+#define	SOLID_TRIGGER			1		// touch on edge, but not blocking
+#define	SOLID_BBOX			2		// touch on edge, block
+#define	SOLID_SLIDEBOX			3		// touch on edge, but not an onground
+#define	SOLID_BSP			4		// bsp clip, touch on edge, block
+
+// edict->deadflag values
+#define	DAMAGE_NO			0
+#define	DAMAGE_YES			1
+#define	DAMAGE_AIM			2
+
+// edict->flags
+#define	FL_FLY				1
+#define	FL_SWIM				2
+#define	FL_GLIMPSE			4
+#define	FL_CLIENT			8
+#define	FL_INWATER			16
+#define	FL_MONSTER			32
+#define	FL_GODMODE			64
+#define	FL_NOTARGET			128
+#define	FL_ITEM				256
+#define	FL_ONGROUND			512
+#define	FL_PARTIALGROUND		1024	// not all corners are valid
+#define	FL_WATERJUMP			2048	// player jumping out of water
+
+
+#define MAX_ENT_LEAFS 16
 struct edict
 {
 	qboolean	inuse;
@@ -345,6 +385,10 @@ struct edict
 	struct entity_state state;
 	int numleafs;
 	short leafnums[MAX_ENT_LEAFS];
+	int solid;
+	int deadflag;
+	int flags;
+	vec3_t absmin, absmax;
 };
 
 struct server
@@ -380,6 +424,9 @@ struct server
 
 	struct map *map;
 	char *map_filename;
+
+	struct areanode areanodes[AREA_NODES];
+	int areanodes_count;
 
 	struct buffer signon_buffers[MAX_SIGNON_BUFFERS];
 	int signon_buffers_count;

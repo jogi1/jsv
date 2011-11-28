@@ -19,13 +19,14 @@ require "vector"
 
 items_types = {
 	item_armorInv = {model="progs/armor.mdl", skinnum=2},
-	item_health = {model="maps/b_bh10.bsp"},
+	item_healthx = {model="maps/b_bh10.bsp"},
 	item_armor1 = {model="progs/armor.mdl", skinnum=0},
 	item_armor2 = {model="progs/armor.mdl", skinnum=1},
 	item_cells = {model="maps/b_batt1.bsp"},
 	item_shells= {model="maps/b_shell0.bsp"},
 	item_rockets = {model="maps/b_rock0.bsp"},
 	item_spikes = {model="maps/b_nail0.bsp"},
+	item_artifact_super_damage = {model="progs/quaddama.mdl"},
 	weapon_lightning = {model="progs/g_light.mdl"},
 	weapon_grenadelauncher = {model="progs/g_rock.mdl"},
 	weapon_rocketlauncher = {model="progs/g_rock2.mdl"},
@@ -52,6 +53,8 @@ preload_models = {"progs/player.mdl"}
 preload_sounds = {"player/plyrjmp8.wav", "player/h2ojump.wav"}
 server.precached_models = {}
 server.precached_sounds = {}
+server.path_corner = {}
+server.func_wall = {}
 server.static_entities = {}
 server.lights = {}
 server.entities = {}
@@ -59,6 +62,7 @@ server.spawns = {}
 server.intermission = {}
 server.player_start = {}
 server.doors = {}
+server.buttons = {}
 server.teleporter_destination = {}
 server.teleporter_trigger = {}
 server.trigger_push = {}
@@ -97,7 +101,11 @@ function FUNC_entity_load (server_ptr, entity)
 		elseif (field == 'origin') then
 			lent.origin = vector.from_string(value);
 		elseif (field == 'angle') then
-			lent.angle = vector.from_string(value);
+			if (value == "-1" or value == "-2" or value == "0") then
+				lent.special_angle = value;
+			else
+				lent.angle = vector.from_string(value);
+			end
 		elseif (field == 'dmg') then
 			lent.damage = value;
 		else
@@ -160,6 +168,16 @@ function FUNC_entity_load (server_ptr, entity)
 		return
 	end
 
+	if (lent.classname == 'path_corner') then
+		server.path_corner[#server.path_corner + 1] = lent;
+		return
+	end
+
+	if (lent.classname == 'func_wall') then
+		server.func_wall[#server.func_wall + 1] = lent;
+		return
+	end
+
 
 
 	if (lent.classname == 'info_player_start') then
@@ -173,9 +191,19 @@ function FUNC_entity_load (server_ptr, entity)
 		return
 	end
 
+	-- ignore monesters
+	if (string.sub(lent.classname, 1, 8) == "monster_") then
+		return
+	end
+
+	-- ignore ambient
+	if (string.sub(lent.classname, 1, 8) == "ambient_") then
+		return
+	end
+
 	for key, value in pairs(items_types) do
 		if (lent.classname == key) then
-			server.entities[#server.entities] = lent;
+			server.entities[#server.entities +1 ] = lent;
 			server.entities[#server.entities]["model"] = value.model;
 			if (value.skinnum) then
 				server.entities[#server.entities]["skinnum"] = value.skinnum;
@@ -236,6 +264,11 @@ function FUNC_entity_load_finished (server_ptr)
 		edict.set_baseline(e);
 	end
 
+	for key, value in pairs(server.doors) do
+	end
+
+
+
 end
 
 function FUNC_get_spawn()
@@ -249,6 +282,7 @@ function FUNC_print_info()
 	print("entities: " .. #server.entities);
 	print("telporters: " .. #server.teleporter_trigger);
 	print("teleporter_destination: " .. #server.teleporter_destination);
+	print("doors: " .. #server.doors);
 end
 
 function FUNC_print_var (server_ptr, client, first, ...)
@@ -261,7 +295,7 @@ function FUNC_print_var (server_ptr, client, first, ...)
 	end
 
 	for k, v in ipairs(arg) do
-		if (v:sub(1,1) == "i") then
+		if (v:sub(1,2) == "^i") then
 			v = tonumber(v:sub(2));
 		end
 		test = test[v];

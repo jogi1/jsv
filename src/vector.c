@@ -81,3 +81,16 @@ void Vector_Add(vec3_t out, vec3_t a, vec3_t b)
 	out[1] = a[1] + b[1];
 	out[2] = a[2] + b[2];
 }
+
+void Vector_Clear(vec3_t out)
+{
+	memset(&out, 0, sizeof(*out));
+}
+
+void Vector_Set(vec3_t in, float x, float y, float z)
+{
+	in[0] = x;
+	in[1] = y;
+	in[2] = z;
+}
+

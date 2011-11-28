@@ -505,9 +505,9 @@ int Packet_GetSizeV(const char *format, va_list *argptr_in)
 	return size;
 }
 
-qboolean Packet_BufferCheckSize(struct buffer *buffer, int write_size)
+qboolean Packet_BufferCheckSize(struct buffer *buffer, int write_size, int margin)
 {
-	if (write_size >= BUFFER_SIZE - buffer->position)
+	if (write_size >= BUFFER_SIZE - buffer->position - margin)
 		return false;
 	return true;
 }
@@ -622,7 +622,7 @@ qboolean Packet_WriteToBuffer(struct buffer *buffer, const char *format, ...)
 	va_start(argptr, format);
 	write_size = Packet_GetSizeV(format, &argptr);
 	va_end(argptr);
-	if (Packet_BufferCheckSize(buffer, write_size))
+	if (Packet_BufferCheckSize(buffer, write_size, 0))
 	{
 		va_start(argptr, format);
 		r = Packet_WriteToBufferV(buffer, format, &argptr);
@@ -664,7 +664,8 @@ qboolean Client_CheckReliable(struct client *client, int write_size)
 {
 	if (client->reliable_buffer == NULL)
 		client->reliable_buffer = &client->message;
-	if (Packet_BufferCheckSize(client->reliable_buffer, write_size) == false)
+#warning margin might break stuff
+	if (Packet_BufferCheckSize(client->reliable_buffer, write_size, BUFFER_SIZE/2) == false)
 		return Client_SwitchReliable(client);
 	return true;
 }

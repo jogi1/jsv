@@ -89,6 +89,8 @@ struct leaf *Model_LoadLeafs(struct lump *lump, unsigned char *base, int *leafs_
 		return NULL;
 	}
 
+	*leafs_count = count;
+
 	count = lump->filelen / sizeof(*in);
 	out = (struct leaf *) calloc(count, sizeof(*out));
 
@@ -246,10 +248,8 @@ static qboolean Model_MapCreateHulls(struct map *map)
 	count = map->nodes_count;
 
 	out = (struct clipnode *) calloc(count, sizeof(*out));
-	printf("%i %p %i\n", count, out, map->submodels_count);
 	if (out == NULL)
 		return false;
-
 
 	for (i=0; i<map->submodels_count; i++)
 	{
@@ -379,47 +379,32 @@ static qboolean Model_MapCreatePHS(struct map *map)
 	return true;
 }
 
-struct submodel *Model_LoadSubmodels(struct lump *lump, unsigned char *base, int *submodel_count, int *visleafs, struct plane *planes, struct clipnode *clipnodes, int clipnodes_count)
+#warning revert this back
+qboolean Model_LoadSubmodels(struct map *map)
 {
 	struct submodel *out, *rout;
 	struct dsubmodel *in;
 	int i, j, count;
 
-	if (lump->filelen % sizeof(*in))
-	{
-		*submodel_count = -1;
-		return NULL;
-	}
+	if (map->header->lumps[LUMP_MODELS].filelen % sizeof(*in))
+		return false;
 
-	in = (struct dsubmodel *)(base + lump->fileofs);
+	in = (struct dsubmodel *)(map->mod_base + map->header->lumps[LUMP_MODELS].fileofs);
 
-	count = lump->filelen / sizeof(*in);
+	map->submodels_count = map->header->lumps[LUMP_MODELS].filelen / sizeof(*in);
 
-	if (count < 1)
-	{
-		*submodel_count = -1;
-		return NULL;
-	}
+	if (map->submodels_count< 1)
+		return false;
 
-	if (count > MAX_MAP_MODELS)
-	{
-		*submodel_count = -1;
-		return NULL;
-	}
+	if (map->submodels_count > MAX_MAP_MODELS)
+		return false;
 
-	out = calloc(count, sizeof(*out));
-	if (out == NULL)
-	{
-		*submodel_count = -1;
-		return NULL;
-	}
+	out = map->submodels;
 	rout = out;
 
-	*submodel_count = count;
+	map->visleafs = LittleLong(in[0].visleafs);
 
-	*visleafs = LittleLong(in[0].visleafs);
-
-	for (i=0; i<count; i++, in++, out++)
+	for (i=0; i<map->submodels_count ; i++, in++, out++)
 	{
 		for (j=0; j<3; j++)
 		{
@@ -430,13 +415,22 @@ struct submodel *Model_LoadSubmodels(struct lump *lump, unsigned char *base, int
 
 		for (j=0; j<MAX_MAP_HULLS; j++)
 		{
-			out->hulls[j].planes = planes;
-			out->hulls[j].clipnodes = clipnodes;
+			out->hulls[j].planes = map->planes;
+			out->hulls[j].clipnodes = map->clipnodes;
 			out->hulls[j].firstclipnode = LittleLong(in->headnode[j]);
-			out->hulls[j].lastclipnode = clipnodes_count - 1;
+			out->hulls[j].lastclipnode = map->clipnodes_count - 1;
 		}
+
+		Vector_Clear(out->hulls[0].clip_mins);
+		Vector_Clear(out->hulls[0].clip_maxs);
+
+		Vector_Set(out->hulls[1].clip_mins, -16, -16, -24);
+		Vector_Set(out->hulls[1].clip_maxs, 16, 16, 32);
+
+		Vector_Set(out->hulls[2].clip_mins, -32, -32, -24);
+		Vector_Set(out->hulls[2].clip_maxs, 32, 32, 64);
 	}
-	return rout;
+	return true;
 }
 
 void Model_MapCleanup(struct map *map)
@@ -525,8 +519,7 @@ struct map *Model_MapLoad(struct server *server, char *filename)
 					map->clipnodes = Model_LoadClipnodes(&map->header->lumps[LUMP_CLIPNODES], map->mod_base, &map->clipnodes_count);
 					if (map->clipnodes)
 					{
-						map->submodels = Model_LoadSubmodels(&map->header->lumps[LUMP_MODELS], map->mod_base, &map->submodels_count, &map->visleafs, map->planes, map->clipnodes, map->clipnodes_count);
-						if (map->submodels || map->submodels_count == 0)
+						if (Model_LoadSubmodels(map))
 						{
 							if (Model_MapCreateHulls(map))
 							{

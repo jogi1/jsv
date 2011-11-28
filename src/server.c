@@ -47,7 +47,7 @@ struct edict *Server_GetFreeEdict(struct server *server)
 
 	server->edicts[server->edicts_count].inuse = true;
 	server->edicts_count++;
-	return &server->edicts[server->edicts_count-1];
+	return &server->edicts[(server->edicts_count - 1)];
 }
 
 #define MAX_USERID 99
@@ -66,7 +66,6 @@ void Server_EdictCreateBaseline(struct edict *edict)
 {
 	if (!edict)
 		return;
-
 	memcpy(&edict->baseline, &edict->state, sizeof(struct entity_state));
 }
 
@@ -1084,17 +1083,20 @@ static qboolean Server_LoadMap(struct server *server)
 	Model_MapFree(server->map);
 	server->map = Model_MapLoad(server, buffer);
 
-	// reserver the first MAX_CLIENTS+1 edicts
-	e = Server_GetFreeEdict(server);
-	if (!e)
-		return false;
-	e->state.model_index = Server_PrecacheModel(server, buffer, true);
-
-		if (!server->map)
+	if (!server->map)
 	{
 		Log_Print(server->log, log_main, "ERROR: loading map \"%s\" server will shutdown", buffer);
 		return false;
 	}
+
+	if (!World_SetupAreaNodes(server))
+		return false;
+
+	// reserve the first MAX_CLIENTS+1 edicts
+	e = Server_GetFreeEdict(server);
+	if (!e)
+		return false;
+	e->state.model_index = Server_PrecacheModel(server, buffer, true);
 
 	for (i=0; i<MAX_CLIENTS; i++)
 	{
@@ -1105,8 +1107,6 @@ static qboolean Server_LoadMap(struct server *server)
 		e->inuse = true;
 	}
 
-	//printf("submodels: %i\n", server->map->submodels_count);
-
 	for (i=1; i<server->map->submodels_count; i++)
 	{
 		snprintf(buffer, sizeof(buffer), "*%i", i);
@@ -1116,31 +1116,14 @@ static qboolean Server_LoadMap(struct server *server)
 		e->state.model_index = Server_PrecacheModel(server, buffer, true);
 	}
 
-	for (i=0; i<MAX_CLIENTS; i++)
-		server->player_model = server->clients[i].edict->state.model_index = Server_PrecacheModel(server, "progs/player.mdl", true);
 
 	//load entities
 	LUA_CallFunction(server, &server->mod, NULL, "entity_preload");
 	Server_LoadEntities(server, server->map->entity_string);
 	LUA_CallFunction(server, &server->mod, NULL, "entity_load_finished");
 
-	for (i=0; ;i++)
-	{
-		if (server->edicts[i].inuse == false)
-			break;
-
-		/*printf("%i: %i %s - %f %f %f\n", i, server->edicts[i].state.model_index,
-				server->model_precache[server->edicts[i].state.model_index],
-				server->edicts[i].state.origin[0],
-				server->edicts[i].state.origin[1],
-				server->edicts[i].state.origin[2]);
-				*/
-	}
-
 	for (i=0; i<32; i++)
-	{
 		LUA_GetSpawn(server, &server->edicts[i+1].state.origin);
-	}
 
 	if (!Server_CreateSignon(server))
 		return false;
@@ -1148,9 +1131,36 @@ static qboolean Server_LoadMap(struct server *server)
 	//call the mod map function
 	LUA_CallFunction(server, &server->mod, NULL, "map_start");
 
-	//get certain models
-//	for (i=0; i<server->model_precache_index; i++)
-//		printf("%i: %s\n", i, server->model_precache[i]);
+	for (i=0; i<MAX_CLIENTS; i++)
+		server->player_model = server->clients[i].edict->state.model_index = Server_PrecacheModel(server, "progs/player.mdl", true);
+
+	if (0)
+	{
+	for (i=0; ;i++)
+	{
+		if (server->edicts[i].inuse == false)
+			break;
+
+		printf("%i: %i %s - %f %f %f - %f %f %f\n", i, server->edicts[i].state.model_index,
+				server->model_precache[server->edicts[i].state.model_index],
+				server->edicts[i].state.origin[0],
+				server->edicts[i].state.origin[1],
+				server->edicts[i].state.origin[2],
+				server->edicts[i].state.angles[0],
+				server->edicts[i].state.angles[1],
+				server->edicts[i].state.angles[2],
+				server->edicts[i].state.angles[3]
+				);
+	}
+
+	for (i=0; i<server->map->submodels_count; i++)
+	{
+		printf("%i: %f %f %f\n", i ,
+				server->map->submodels[i].origins[0],
+				server->map->submodels[i].origins[1],
+				server->map->submodels[i].origins[2]);
+	}
+	}
 
 	return true;
 }
@@ -1246,7 +1256,7 @@ int main (int argc, char *argv[])
 			{
 				if(NET_Init(server))
 				{
-					Server_ChangeMap(server, "skull");
+					Server_ChangeMap(server, "dm6");
 					Log_Print(server->log, log_main, "Starting Server on: %s:%i\n", server->ip? server->ip : "any", server->port);
 					server->run = true;
 					while (server->run)
