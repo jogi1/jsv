@@ -1256,7 +1256,7 @@ int main (int argc, char *argv[])
 			{
 				if(NET_Init(server))
 				{
-					Server_ChangeMap(server, "dm6");
+					Server_ChangeMap(server, "skull");
 					Log_Print(server->log, log_main, "Starting Server on: %s:%i\n", server->ip? server->ip : "any", server->port);
 					server->run = true;
 					while (server->run)

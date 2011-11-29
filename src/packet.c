@@ -538,8 +538,8 @@ qboolean Packet_WriteToBufferV(struct buffer *buffer, const char *format, va_lis
 		switch (*f)
 		{
 			case 'A':
-				short_val = (short)va_arg(argptr, int);
-				cval = Q_rint(short_val);
+				fval = (float)va_arg(argptr, double);
+				cval = Q_rint(fval * 256.0 / 360.0) & 255;
 				memcpy(buffer->data + buffer->position, (const void*)&cval, sizeof(char));
 				buffer->position += sizeof(char);
 				break;
