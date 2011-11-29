@@ -37,7 +37,7 @@ static void *Log_Thread(void *data)
 {
 	struct log *log;
 	char date[1024];
-	char buffer[4024];
+	char buffer[8192];
 	struct log_entry *e, *ne;
 	struct tm *tm;
 	FILE *f;
@@ -189,7 +189,7 @@ void Log_Print(struct log *log, enum log_type type, char *format, ...)
 {
 	struct log_entry *entry;
 	va_list argptr;
-	char buffer[4096];
+	char buffer[8192];
 
 	if (!log)
 		return;

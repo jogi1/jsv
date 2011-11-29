@@ -1120,6 +1120,7 @@ static qboolean Server_LoadMap(struct server *server)
 	//load entities
 	LUA_CallFunction(server, &server->mod, NULL, "entity_preload");
 	Server_LoadEntities(server, server->map->entity_string);
+	Log_Print(server->log, log_debug, "%s", server->map->entity_string);
 	LUA_CallFunction(server, &server->mod, NULL, "entity_load_finished");
 
 	for (i=0; i<32; i++)
@@ -1153,7 +1154,7 @@ static qboolean Server_LoadMap(struct server *server)
 				);
 	}
 
-	for (i=0; i<server->map->submodels_count; i++)
+	for (i=0; 0 && i<server->map->submodels_count; i++)
 	{
 		printf("%i: %f %f %f\n", i ,
 				server->map->submodels[i].origins[0],

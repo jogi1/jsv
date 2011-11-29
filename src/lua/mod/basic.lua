@@ -17,16 +17,19 @@ items_types = {
 
 require "vector"
 
+-- well, this really sucks :P
 items_types = {
-	item_armorInv = {model="progs/armor.mdl", skinnum=2},
-	item_healthx = {model="maps/b_bh10.bsp"},
+	item_health = {spawnflags = { "maps/b_bh10.bsp", "maps/b_bh25.bsp", "maps/b_bh100.bsp" }},
 	item_armor1 = {model="progs/armor.mdl", skinnum=0},
 	item_armor2 = {model="progs/armor.mdl", skinnum=1},
-	item_cells = {model="maps/b_batt1.bsp"},
-	item_shells= {model="maps/b_shell0.bsp"},
-	item_rockets = {model="maps/b_rock0.bsp"},
-	item_spikes = {model="maps/b_nail0.bsp"},
+	item_armorInv = {model="progs/armor.mdl", skinnum=2},
+	item_cells = {spawnflags = {"maps/b_batt0.bsp", "maps/b_batt1.bsp"}},
+	item_shells= {spawnflags = {"maps/b_shell0.bsp", "maps/b_shell1.bsp"}},
+	item_rockets = {spawnflags = {"maps/b_rock0.bsp", "maps/b_rock1.bsp"}},
+	item_spikes = {spawnflags = {"maps/b_nail0.bsp", "maps/b_nail1.bsp"}},
 	item_artifact_super_damage = {model="progs/quaddama.mdl"},
+	item_artifact_invisibility = {model="progs/invisibl.mdl"},
+	item_artifact_invulnerability = {model="progs/invulner.mdl"},
 	weapon_lightning = {model="progs/g_light.mdl"},
 	weapon_grenadelauncher = {model="progs/g_rock.mdl"},
 	weapon_rocketlauncher = {model="progs/g_rock2.mdl"},
@@ -204,9 +207,17 @@ function FUNC_entity_load (server_ptr, entity)
 	for key, value in pairs(items_types) do
 		if (lent.classname == key) then
 			server.entities[#server.entities +1 ] = lent;
-			server.entities[#server.entities]["model"] = value.model;
-			if (value.skinnum) then
-				server.entities[#server.entities]["skinnum"] = value.skinnum;
+			if (value.spawnflags) then
+				local index = 1;
+				if (lent.spawnflags) then
+					index = index + lent.spawnflags;
+				end
+				server.entities[#server.entities]["model"] = value.spawnflags[index];
+			else
+				server.entities[#server.entities]["model"] = value.model;
+				if (value.skinnum) then
+					server.entities[#server.entities]["skinnum"] = value.skinnum;
+				end
 			end
 			return
 		end
@@ -228,9 +239,10 @@ function FUNC_entity_load_finished (server_ptr)
 		server.edicts[v]["entity"] = value;
 		server.edicts[v]["entities_index"] = key;
 		server.edicts[v]["model_index"] = server.precached_models[value["model"]];
---		print (value["type"] .. " - " .. edicts[v]["model_index"] .. " - " .. value["model"]);
+		--print ("test: " .. value["classname"] .. " - " .. server.edicts[v]["model_index"] .. " - " .. value["model"]);
 		edict.set_modelindex(v, server.edicts[v]["model_index"]);
 		if (value["origin"]) then
+			--print (value.origin.x .. " " .. value.origin.y .. " " .. value.origin.z);
 			edict.set_origin(v, value.origin.x, value.origin.y, value.origin.z);
 		end
 		if (value["angels"]) then
@@ -245,6 +257,7 @@ function FUNC_entity_load_finished (server_ptr)
 		edict.set_baseline(v);
 	end
 
+	--[[
 	-- set the models to 0 on triggers and do other trigger setup
 	for key, value in pairs(server.teleporter_trigger) do
 		e = server:get_edict_for_inline_model(value.model)
@@ -267,6 +280,7 @@ function FUNC_entity_load_finished (server_ptr)
 	for key, value in pairs(server.doors) do
 	end
 
+	--]]
 
 
 end
