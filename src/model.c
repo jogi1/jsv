@@ -24,7 +24,6 @@ void Model_MapFree(struct map *map)
 
 	if (map->submodels_count)
 		free(map->submodels[0].hulls[0].clipnodes);
-	free(map->submodels);
 	free(map->pvs);
 	free(map->phs);
 	free(map->entity_string);

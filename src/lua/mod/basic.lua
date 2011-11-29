@@ -34,6 +34,7 @@ items_types = {
 	weapon_grenadelauncher = {model="progs/g_rock.mdl"},
 	weapon_rocketlauncher = {model="progs/g_rock2.mdl"},
 	weapon_supernailgun = {model="progs/g_nail2.mdl"},
+	weapon_nailgun = {model="progs/g_nail.mdl"},
 	weapon_supershotgun = {model="progs/g_shot.mdl"}
 };
 
@@ -71,6 +72,7 @@ server.teleporter_trigger = {}
 server.trigger_push = {}
 server.trigger_hurt = {}
 server.trigger_multiple = {}
+server.trigger_changelevel = {}
 server.edicts = {}
 
 function FUNC_map_start(server_ptr, client, ...)
@@ -156,13 +158,18 @@ function FUNC_entity_load (server_ptr, entity)
 		return
 	end
 
-	if (lent.classname == 'trigger_hurt') then
+	if (lent.classname == 'target_multiple') then
 		server.target_multiple[#server.trigger_multiple + 1] = lent;
 		return
 	end
 
 	if (lent.classname == 'trigger_hurt') then
 		server.target_multiple[#server.trigger_multiple + 1] = lent;
+		return
+	end
+
+	if (lent.classname == 'trigger_changelevel') then
+		server.trigger_changelevel[#server.trigger_changelevel + 1] = lent;
 		return
 	end
 
