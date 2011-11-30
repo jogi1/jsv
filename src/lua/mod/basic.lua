@@ -59,6 +59,7 @@ server.precached_models = {}
 server.precached_sounds = {}
 server.path_corner = {}
 server.func_wall = {}
+server.func_plat = {}
 server.static_entities = {}
 server.lights = {}
 server.entities = {}
@@ -74,6 +75,8 @@ server.trigger_hurt = {}
 server.trigger_multiple = {}
 server.trigger_changelevel = {}
 server.edicts = {}
+server.spawn_model = "progs/player.mdl";
+server.show_spawns = false;
 
 function FUNC_map_start(server_ptr, client, ...)
 end
@@ -106,11 +109,8 @@ function FUNC_entity_load (server_ptr, entity)
 		elseif (field == 'origin') then
 			lent.origin = vector.from_string(value);
 		elseif (field == 'angle') then
-			if (value == "-1" or value == "-2" or value == "0") then
-				lent.special_angle = value;
-			else
-				lent.angle = vector.from_string(value);
-			end
+			lent.original_angle = value;
+			lent.angle = vector.from_string(value);
 		elseif (field == 'dmg') then
 			lent.damage = value;
 		else
@@ -188,7 +188,10 @@ function FUNC_entity_load (server_ptr, entity)
 		return
 	end
 
-
+	if (lent.classname == 'func_plat') then
+		server.func_plat[#server.func_plat + 1] = lent;
+		return
+	end
 
 	if (lent.classname == 'info_player_start') then
 		server.player_start = lent;
@@ -289,6 +292,7 @@ function FUNC_entity_load_finished (server_ptr)
 
 	--]]
 
+	server.spawn_model = server:precache_model(server.spawn_model, true);
 
 end
 
@@ -317,7 +321,7 @@ function FUNC_print_var (server_ptr, client, first, ...)
 
 	for k, v in ipairs(arg) do
 		if (v:sub(1,2) == "^i") then
-			v = tonumber(v:sub(2));
+			v = tonumber(v:sub(3));
 		end
 		test = test[v];
 		if (test == nil) then
@@ -346,4 +350,24 @@ function FUNC_print_var (server_ptr, client, first, ...)
 	end
 end
 
-
+function FUNC_show_spawns ()
+	local k, v;
+	if (server.show_spawns == false) then
+		for k, v in pairs(server.spawns) do
+			v.edict = edict.get_unused(server.__pointer);
+			edict.set_origin(v.edict, v.origin.x, v.origin.y, v.origin.z);
+			--print (v.origin.x .. " " .. v.origin.y .. " " .. v.origin.z .. " " .. server.spawn_model);
+			if (v.angles) then
+				edict.set_angles(v.edict, v.angles.x, v.angles.y, v.angles.z);
+			end
+			edict.set_modelindex(v.edict, server.spawn_model);
+			--edict.set_baseline(v);
+		end
+		server.show_spawns = true;
+	else
+		for k, v in pairs(server.spawns) do
+			edict.remove(v.edict);
+		end
+		server.show_spawns = false;
+	end
+end

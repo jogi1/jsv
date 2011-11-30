@@ -21,7 +21,22 @@ static int EDICT_GetUnused(lua_State *L)
 	}
 	else
 		lua_pushnil(L);
+	return 1;
+}
 
+static int EDICT_Remove(lua_State *L)
+{
+	struct server *server;
+	struct edict *edict;
+	if (lua_isuserdata(L, 1))
+	{
+		edict = (struct edict *)lua_touserdata(L, 1);
+		if (edict)
+		{
+			edict->inuse = false;
+			printf("removing edict\n");
+		}
+	}
 	return 1;
 }
 
@@ -105,6 +120,7 @@ static int EDICT_SetSkinNum(lua_State *L)
 static luaL_reg Edict_Functions_Methods[] = 
 {
 	{"get_unused", EDICT_GetUnused},
+	{"remove", EDICT_Remove},
 	{"set_origin", EDICT_SetOrigin},
 	{"set_angles", EDICT_SetAngles},
 	{"set_modelindex", EDICT_SetModelIndex},

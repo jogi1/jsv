@@ -448,7 +448,7 @@ static void Server_WriteUpdate(struct server *server, struct client *client, str
 
 	frame = &client->frames[client->incoming_sequence & UPDATE_MASK];
 
-	if (print_packets)
+	if (0)
 	{
 		printf("frame seq: %i\n", client->incoming_sequence & UPDATE_MASK);
 		printf("client delta: %i\n", client->delta_sequence);
@@ -465,13 +465,11 @@ static void Server_WriteUpdate(struct server *server, struct client *client, str
 	{
 		oldmax = 0;
 		from = NULL;
-
 		Client_Write(client, "c", svc_packetentities);
 	}
 
 	newindex = 0;
 	oldindex = 0;
-
 
 	while (newindex < to->entities_count || oldindex < oldmax)
 	{
@@ -480,14 +478,17 @@ static void Server_WriteUpdate(struct server *server, struct client *client, str
 
 		if (newnum == oldnum)
 		{
-			Server_WriteDelta(server, client, &from->entities[oldindex++], &to->entities[newindex++], false);
+			Server_WriteDelta(server, client, &from->entities[oldindex], &to->entities[newindex], false);
+			newindex++;
+			oldindex++;
 			continue;
 		}
 
 		if (newnum < oldnum)
 		{
 			e = &server->edicts[newnum];
-			Server_WriteDelta(server, client, &e->baseline, &to->entities[newindex++], true);
+			Server_WriteDelta(server, client, &e->baseline, &to->entities[newindex], true);
+			newindex++;
 			continue;
 		}
 
@@ -525,15 +526,16 @@ static void Server_WritePlayersToClient(struct server *server , struct client *c
 
 static void Server_WriteEntitiesToClient(struct server *server, struct client *client)
 {
-	struct packet_entities to;
+	struct packet_entities *to;
 	struct pvs pvs;
 	struct edict *e;
 	int i;
 	vec3_t origin;
+	struct frame *frame;
 
-#warning please fix me
-	memset(&to, 0, sizeof(struct packet_entities));
-	memset(&origin, 0, sizeof(*origin));
+	frame = &client->frames[client->incoming_sequence & UPDATE_MASK];
+	to = &frame->entities;
+	to->entities_count = 0;
 
 	e = NULL;
 
@@ -541,7 +543,7 @@ static void Server_WriteEntitiesToClient(struct server *server, struct client *c
 
 	for (i=1+MAX_CLIENTS; i < MAX_EDICTS; i++, e = &server->edicts[i])
 	{
-		if (to.entities_count == MAX_PACKET_ENTITIES)
+		if (to->entities_count == MAX_PACKET_ENTITIES)
 			continue;
 
 		if (e == NULL)
@@ -550,11 +552,12 @@ static void Server_WriteEntitiesToClient(struct server *server, struct client *c
 		if (e->inuse == false)
 			continue;
 
-		memcpy(&to.entities[to.entities_count], &e->state, sizeof(struct entity_state));
-		to.entities[to.entities_count].flags = 0;
-		to.entities_count++;
+		memcpy(&to->entities[to->entities_count], &e->state, sizeof(struct entity_state));
+		to->entities[to->entities_count].number = i;
+		to->entities[to->entities_count].flags = 0;
+		to->entities_count++;
 	}
-	Server_WriteUpdate(server, client, &to);
+	Server_WriteUpdate(server, client, to);
 }
 
 static void Server_WriteClientsToClient(struct server *server, struct client *client)
