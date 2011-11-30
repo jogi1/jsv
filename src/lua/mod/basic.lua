@@ -108,9 +108,11 @@ function FUNC_entity_load (server_ptr, entity)
 			lent.classname = value;
 		elseif (field == 'origin') then
 			lent.origin = vector.from_string(value);
+		elseif (field == 'angles') then
+			lent.original_angles = value;
+			lent.angles = vector.from_string(value);
 		elseif (field == 'angle') then
-			lent.original_angle = value;
-			lent.angle = vector.from_string(value);
+			lent.angles = vector.from_values(0, tonumber(value), 0);
 		elseif (field == 'dmg') then
 			lent.damage = value;
 		else
@@ -255,8 +257,8 @@ function FUNC_entity_load_finished (server_ptr)
 			--print (value.origin.x .. " " .. value.origin.y .. " " .. value.origin.z);
 			edict.set_origin(v, value.origin.x, value.origin.y, value.origin.z);
 		end
-		if (value["angels"]) then
-			edict.set_angels(v, value.angels.x, value.angels.y, value.angels.z);
+		if (value["angles"]) then
+			edict.set_angles(v, value.angles.x, value.angles.y, value.angles.z);
 		end
 
 		if (value.skinnum) then

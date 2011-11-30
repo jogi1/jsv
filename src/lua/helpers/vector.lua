@@ -13,3 +13,11 @@ function vector.from_string(string)
 	vec.z = temp[3];
 	return vec;
 end
+
+function vector.from_values(x, y, z)
+	vec = {};
+	vec.x = x;
+	vec.y = y;
+	vec.z = z;
+	return vec;
+end

@@ -442,9 +442,7 @@ struct server
 	struct log *log;
 	pthread_t log_thread;
 	unsigned int pid;
-
 };
-
 
 #include "net.h"
 #include "packet.h"
@@ -458,6 +456,7 @@ struct server
 #include "info.h"
 #include "log.h"
 #include "physics.h"
+#include "world.h"
 
 int Server_PrecacheSound(struct server *server, char *sound);
 int Server_PrecacheModel(struct server *server, char *model, qboolean add);

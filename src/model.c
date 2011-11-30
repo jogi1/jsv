@@ -378,12 +378,11 @@ static qboolean Model_MapCreatePHS(struct map *map)
 	return true;
 }
 
-#warning revert this back
-qboolean Model_LoadSubmodels(struct map *map)
+qboolean Model_MapLoadSubmodels(struct map *map)
 {
 	struct submodel *out, *rout;
 	struct dsubmodel *in;
-	int i, j, count;
+	int i, j;
 
 	if (map->header->lumps[LUMP_MODELS].filelen % sizeof(*in))
 		return false;
@@ -518,7 +517,7 @@ struct map *Model_MapLoad(struct server *server, char *filename)
 					map->clipnodes = Model_LoadClipnodes(&map->header->lumps[LUMP_CLIPNODES], map->mod_base, &map->clipnodes_count);
 					if (map->clipnodes)
 					{
-						if (Model_LoadSubmodels(map))
+						if (Model_MapLoadSubmodels(map))
 						{
 							if (Model_MapCreateHulls(map))
 							{

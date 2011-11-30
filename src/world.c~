@@ -50,6 +50,7 @@ int World_AreaEdicts(struct server *server, vec3_t mins, vec3_t maxs, struct edi
 {
 	struct link *start, *l;
 	struct edict *touch;
+	int count = 0;
 	int stackdepth = 0;
 	struct areanode *localstack[AREA_NODES], *node = server->areanodes;
 

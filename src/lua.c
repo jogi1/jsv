@@ -26,7 +26,6 @@ static int EDICT_GetUnused(lua_State *L)
 
 static int EDICT_Remove(lua_State *L)
 {
-	struct server *server;
 	struct edict *edict;
 	if (lua_isuserdata(L, 1))
 	{
@@ -273,7 +272,7 @@ static int SFM_PrintToClient(lua_State *L)
 			if (lua_isstring(L, 3))
 			{
 				s = lua_tostring(L, 3);
-				Print_ToClient(client, true, 3, s);
+				Print_ToClient(client, true, 3, (char *)s);
 			}
 		}
 	}

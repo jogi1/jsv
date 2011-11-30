@@ -97,7 +97,6 @@ void CMD_Modellist(struct server *server, struct client *client, struct tokenize
 	int i;
 	int n, sc;
 	char **s;
-	char buffer[1024];
 
 	sc = atoi(ts->tokens[1]);
 	if (CMD_isinvalidspawncount(server, client, sc))

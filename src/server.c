@@ -1152,8 +1152,7 @@ static qboolean Server_LoadMap(struct server *server)
 				server->edicts[i].state.origin[2],
 				server->edicts[i].state.angles[0],
 				server->edicts[i].state.angles[1],
-				server->edicts[i].state.angles[2],
-				server->edicts[i].state.angles[3]
+				server->edicts[i].state.angles[2]
 				);
 	}
 

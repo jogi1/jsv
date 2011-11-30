@@ -1,3 +1,5 @@
+#include <string.h>
+
 #include "server.h"
 
 struct areanode *World_CreateAreaNodes(struct server *server, int depth, vec3_t mins, vec3_t maxs)
