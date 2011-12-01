@@ -7,9 +7,6 @@ INCPATH= \
 LIBPATH= \
 	-L/usr/pkg/lib
 
-LIBS= \
-	-llua5.1
-
 SRC= \
 	server.c \
 	log.c \
@@ -45,6 +42,7 @@ endif
 ifeq ($(OS),linux)
 	LFLAGS+=-lrt
 	INCPATH+=$(shell pkg-config --cflags lua5.1)
+	LIBS+=$(shell pkg-config --libs lua5.1)
 endif
 
 ifeq ($(OS),darwin)
