@@ -1239,10 +1239,12 @@ int main (int argc, char *argv[])
 	server->pid = getpid();
 	time(&server->time_start);
 
+#ifdef __FIX_THIS_WEIRD_BUG
 	if (!(server->log = Log_Init(server)))
 	{
 		Print_Console("could not init logging...\n");
 	}
+#endif
 
 	server_handles.server[0] = server;
 	server_handles.server[1] = NULL;

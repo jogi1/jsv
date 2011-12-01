@@ -33,7 +33,7 @@ CFLAGS+= -Wall
 TARGETSYSTEM:=$(shell gcc -dumpmachine)
 
 OS=$(shell echo $(TARGETSYSTEM) | sed "s/-gnu//" | sed "s/.*-//" | tr [A-Z] [a-z] | sed s/^mingw.*/win32/ | sed s/^openbsd.*/openbsd/ | sed s/^freebsd.*/freebsd/ | sed s/^darwin.*/macosx/)
-BIT=$(shell echo $(TARGETSYSTEM) | sed "s/.*_//" | sed "s/-.*//")
+BIT=$(shell echo $(TARGETSYSTEM) | sed "s/.*64.*/64/")
 
 ifeq ($(BIT), 64)
 	CFLAGS+=-m64
@@ -43,6 +43,10 @@ ifeq ($(OS),linux)
 	LFLAGS+=-lrt
 	INCPATH+=$(shell pkg-config --cflags lua5.1)
 	LIBS+=$(shell pkg-config --libs lua5.1)
+endif
+
+ifeq ($(OS), freebsd)
+	CFLAGS+=-D__FIX_THIS_WEIRD_BUG
 endif
 
 ifeq ($(OS),darwin)
