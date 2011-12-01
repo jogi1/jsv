@@ -46,9 +46,10 @@ ifeq ($(OS),linux)
 endif
 
 ifeq ($(OS),freebsd)
+	LFLAGS+=-lm
 	CFLAGS+=-D__FIX_THIS_WEIRD_BUG
 	INCPATH+=$(shell pkg-config --cflags lua-5.1)
-	LIBS+=$(shell pkg-config --libs lua5.1)
+	LIBS+=$(shell pkg-config --libs lua-5.1)
 endif
 
 ifeq ($(OS),darwin)
