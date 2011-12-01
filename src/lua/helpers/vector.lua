@@ -21,3 +21,4 @@ function vector.from_values(x, y, z)
 	vec.z = z;
 	return vec;
 end
+
