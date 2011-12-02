@@ -26,10 +26,10 @@ struct areanode *World_CreateAreaNodes(struct server *server, int depth, vec3_t 
 		anode->axis = -1;
 
 	anode->dist = 0.5 * (maxs[anode->axis] + mins[anode->axis]);
-	VectorCopy(mins1, mins);
-	VectorCopy(mins2, mins);
-	VectorCopy(maxs1, maxs);
-	VectorCopy(maxs2, maxs);
+	Vector_Copy(mins1, mins);
+	Vector_Copy(mins2, mins);
+	Vector_Copy(maxs1, maxs);
+	Vector_Copy(maxs2, maxs);
 
 	maxs1[anode->axis] = mins1[anode->axis] = anode->dist;
 

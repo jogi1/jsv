@@ -60,10 +60,13 @@ server.precached_sounds = {}
 server.path_corner = {}
 server.func_wall = {}
 server.func_plat = {}
+server.func_train = {}
+server.info_null = {}
 server.static_entities = {}
 server.lights = {}
 server.entities = {}
 server.spawns = {}
+server.trains = {}
 server.intermission = {}
 server.player_start = {}
 server.doors = {}
@@ -77,15 +80,17 @@ server.trigger_changelevel = {}
 server.edicts = {}
 server.spawn_model = "progs/player.mdl";
 server.show_spawns = false;
+server.frametime = 0;
+server.realtime = 0;
 
 function FUNC_map_start(server_ptr, client, ...)
 end
 
 function FUNC_entity_preload(server_ptr, client, ...)
 	--preload models and sounds
-	local key, value;
+	local key, value, k, v;
 	for key, value in pairs(preload_models) do
-		server.precached_models[value] = server:precache_model(value, true)
+		server:precache_model(value, true)
 	end
 
 	for key, value in pairs(preload_sounds) do
@@ -97,7 +102,7 @@ function FUNC_entity_preload(server_ptr, client, ...)
 	end
 end
 
-function FUNC_entity_load (server_ptr, entity)
+function entity_load (server_ptr, entity)
 	local lent = {};
 	local field = nil;
 	local value = nil;
@@ -180,6 +185,16 @@ function FUNC_entity_load (server_ptr, entity)
 		return
 	end
 
+	if (lent.classname == 'func_train') then
+		server.trains[#server.trains + 1] = lent;
+		return
+	end
+
+	if (lent.classname == 'info_null') then
+		server.info_null[#server.info_null + 1] = lent;
+		return
+	end
+
 	if (lent.classname == 'path_corner') then
 		server.path_corner[#server.path_corner + 1] = lent;
 		return
@@ -244,21 +259,23 @@ function FUNC_entity_load_finished (server_ptr)
 	local key, value;
 	local v, e;
 	for key, value in pairs(server.entities) do
-		server.precached_models[value["model"]] = server:precache_model(value["model"], true)
+		server:precache_model(value["model"], true)
 		v = edict.get_unused(server_ptr);
-		server.edicts[v] = {};
+		if (not server.edicts[v]) then
+			server.edicts[v] = {};
+		end
 		server.edicts[v]["e_type"] = "static";
 		server.edicts[v]["entity"] = value;
 		server.edicts[v]["entities_index"] = key;
-		server.edicts[v]["model_index"] = server.precached_models[value["model"]];
+		server.edicts[v]["model_index"] = server.precached_models[value["model"]].index;
 		--print ("test: " .. value["classname"] .. " - " .. server.edicts[v]["model_index"] .. " - " .. value["model"]);
 		edict.set_modelindex(v, server.edicts[v]["model_index"]);
 		if (value["origin"]) then
 			--print (value.origin.x .. " " .. value.origin.y .. " " .. value.origin.z);
-			edict.set_origin(v, value.origin.x, value.origin.y, value.origin.z);
+			edict.set_origin(v, value.origin);
 		end
 		if (value["angles"]) then
-			edict.set_angles(v, value.angles.x, value.angles.y, value.angles.z);
+			edict.set_angles(v, value.angles);
 		end
 
 		if (value.skinnum) then
@@ -295,10 +312,120 @@ function FUNC_entity_load_finished (server_ptr)
 	--]]
 
 	server.spawn_model = server:precache_model(server.spawn_model, true);
-
+	trains_setup();
 end
 
-function FUNC_get_spawn()
+function train_do(self, e)
+	local k, v;
+	local t = self.train;
+
+	t.traveled = t.traveled + server.frametime * t.speed;
+	if (t.traveled > t.path[t.position].distance) then
+		t.position = t.position + 1;
+		if (t.position > #t.path) then
+			t.position = 1;
+		end
+		t.traveled = 0;
+		t.wait = t.path[t.position].wait;
+		if (t.wait == nil) then
+			t.wait = 0;
+		end
+	end
+
+	if (t.wait > 0) then
+		t.wait = t.wait - server.frametime;
+		edict.set_origin(e, t.path[t.position].origin);
+	end
+
+	v = vector.scale(t.path[t.position].direction_vector, t.traveled/t.path[t.position].distance);
+	v = vector.add(v, t.path[t.position].origin);
+	edict.set_origin(e, v);
+end
+
+function trains_setup ()
+	local key, value, location, v, k, e, n;
+	for key, value in pairs(server.trains) do
+		train = value;
+		if (not train.speed) then
+			train.speed = 100;
+		end
+		train.position = 1;
+		train.path = {};
+		train.traveled = 0;
+		v = server:get_edict_for_inline_model(train.model);
+		train.edict = v;
+		train.wait = 0;
+		if (not server.edicts[v]) then
+			server.edicts[v] = {};
+		end
+		server.edicts[v].func = train_do;
+		server.edicts[v].train = train;
+		-- get first location
+		location = get_path_corner(train.target);
+		if (location == nil) then
+			return
+		end
+		train.model = server:precache_model(train.model, false);
+
+		train.path[#train.path + 1] = {};
+		if (location.wait) then
+			train.path[#train.path].wait = location.wait;
+		end
+
+		train.path[#train.path].origin = vector.subtract(location.origin, train.model.mins)
+		size = vector.subtract(train.model.maxs, train.model.mins);
+
+		train.path[#train.path].target = location.target;
+		train.path[#train.path].targetname = location.targetname;
+
+		local run = 1;
+
+		while (run == 1) do
+			location = get_path_corner(train.path[#train.path].target);
+			if (location == nil) then
+				return
+			end
+			train.path[#train.path + 1] = {};
+			train.path[#train.path].origin = vector.subtract(location.origin, train.model.mins)
+			train.path[#train.path].target = location.target;
+			train.path[#train.path].targetname = location.targetname;
+			if (location.target == train.path[1].targetname) then
+				run = 0;
+			end
+
+			train.path[#train.path].wait = 0;
+			if (location.wait) then
+				train.path[#train.path].wait = location.wait;
+			end
+		end
+
+		for k, v in pairs(train.path) do
+			if (k == #train.path) then
+				n = train.path[1];
+			else
+				n = train.path[k+1];
+			end
+			train.path[k].direction_vector = vector.subtract(n.origin, v.origin)
+			train.path[k].distance = vector.length(train.path[k].direction_vector);
+		end
+
+		edict.set_origin(train.path[1].origin);
+	end
+end
+
+function get_path_corner(name)
+	local key, value, k, v;
+
+	for key, value in pairs(server.path_corner) do
+		if (value.targetname == name) then
+			rval = value;
+			return rval;
+		end
+	end
+	return nil;
+end
+
+function get_spawn()
 	return server.spawns[1].origin;
 end
 
@@ -310,6 +437,12 @@ function FUNC_print_info()
 	print("telporters: " .. #server.teleporter_trigger);
 	print("teleporter_destination: " .. #server.teleporter_destination);
 	print("doors: " .. #server.doors);
+	print("trains: " .. #server.trains);
+end
+
+function FUNC_show_times (server_ptr, client)
+	server:print_to_client(client, "realtime : " .. server.realtime .. "\n");
+	server:print_to_client(client, "frametime: " .. server.frametime .. "\n");
 end
 
 function FUNC_print_var (server_ptr, client, first, ...)
@@ -332,7 +465,6 @@ function FUNC_print_var (server_ptr, client, first, ...)
 		end
 	end
 
-	
 	if (type(test) == "table") then
 		server:print_to_client(client, tostring(test) .. " is a table\n");
 		local s = string.format("%10s - %10s\n", "key", "value");
@@ -373,3 +505,12 @@ function FUNC_show_spawns ()
 		server.show_spawns = false;
 	end
 end
+
+function handle_entity (server_ptr, edict_in)
+	if (server.edicts[edict_in]) then
+		if (server.edicts[edict_in].func) then
+			server.edicts[edict_in]:func(edict_in);
+		end
+	end
+end
+

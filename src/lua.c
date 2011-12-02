@@ -57,18 +57,15 @@ static int EDICT_SetOrigin(lua_State *L)
 {
 	struct edict *edict;
 	int i;
+
 	if (lua_isuserdata(L, 1))
 	{
 		edict = lua_touserdata(L, 1);
 		for (i=0; i<3; i++)
 		{
 			edict->state.origin[i] = lua_tonumber(L, i+2);
-			//printf("%f\n", edict->state.origin[i]);
 		}
-		lua_pushboolean(L, 1);
 	}
-	else
-		lua_pushboolean(L, 0);
 	return 1;
 }
 
@@ -81,10 +78,7 @@ static int EDICT_SetAngles(lua_State *L)
 		edict = lua_touserdata(L, 1);
 		for (i=0; i<3; i++)
 			edict->state.angles[i] = lua_tonumber(L, i+2);
-		lua_pushboolean(L, 1);
 	}
-	else
-		lua_pushboolean(L, 0);
 	return 1;
 }
 
@@ -120,8 +114,8 @@ static luaL_reg Edict_Functions_Methods[] =
 {
 	{"get_unused", EDICT_GetUnused},
 	{"remove", EDICT_Remove},
-	{"set_origin", EDICT_SetOrigin},
-	{"set_angles", EDICT_SetAngles},
+	{"__set_origin", EDICT_SetOrigin},
+	{"__set_angles", EDICT_SetAngles},
 	{"set_modelindex", EDICT_SetModelIndex},
 	{"set_baseline", EDICT_SetBaseline},
 	{"set_skinnum", EDICT_SetSkinNum},
@@ -152,10 +146,75 @@ static int SFM_PrecacheSound(lua_State *L)
 	return 1;
 }
 
+static void LUA_Pushmodel(struct server *server, lua_State *L, int model_number)
+{
+	vec3_t mins, maxs;
+	int i;
+
+	i = model_number;
+
+	if (server->model_precache[model_number] == NULL)
+	{
+		printf("its null\n");
+		lua_pushnil(L);
+		return;
+	}
+
+
+	memset(&mins, 0, sizeof(*mins));
+	memset(&maxs, 0, sizeof(*maxs));
+
+	if (server->model_precache[model_number][0] == '*')
+	{
+		i = atoi(server->model_precache[model_number] + 1);
+		printf("%s %i\n", server->model_precache[model_number], i);
+		if (i >= 0 && i < server->map->submodels_count)
+		{
+			Vector_Copy(mins, server->map->submodels[i].mins);
+			Vector_Copy(maxs, server->map->submodels[i].maxs);
+		}
+	}
+
+	// actual model
+	lua_newtable(L);
+
+	lua_pushnumber(L, model_number + 1);
+	lua_setfield(L, -2, "index");
+
+	//mins
+	lua_pushstring(L,"mins");
+	lua_newtable(L);
+	lua_pushstring(L,"x");
+	lua_pushnumber(L, mins[0]);
+	lua_settable(L, -3);
+	lua_pushstring(L,"y");
+	lua_pushnumber(L, mins[1]);
+	lua_settable(L, -3);
+	lua_pushstring(L,"z");
+	lua_pushnumber(L, mins[2]);
+	lua_settable(L, -3);
+	lua_settable(L, -3);
+
+	//maxs
+	lua_pushstring(L,"maxs");
+	lua_newtable(L);
+	lua_pushstring(L,"x");
+	lua_pushnumber(L, maxs[0]);
+	lua_settable(L, -3);
+	lua_pushstring(L,"y");
+	lua_pushnumber(L, maxs[1]);
+	lua_settable(L, -3);
+	lua_pushstring(L,"z");
+	lua_pushnumber(L, maxs[2]);
+	lua_settable(L, -3);
+	lua_settable(L, -3);
+}
+
 static int SFM_PrecacheModel(lua_State *L)
 {
 	struct server *server;
 	const char *s;
+	int i;
 	qboolean a;
 
 	if (lua_isuserdata(L, 1))
@@ -169,11 +228,11 @@ static int SFM_PrecacheModel(lua_State *L)
 			else
 				a = false;
 
-			lua_pushnumber(L, Server_PrecacheModelNet(server, (char *)s, a));
+			LUA_Pushmodel(server, L, Server_PrecacheModel(server, (char *)s, a));
 			return 1;
 		}
 	}
-	lua_pushnumber(L, -1);
+	lua_pushnil(L);
 	return 1;
 }
 
@@ -376,6 +435,7 @@ qboolean LUA_StateInit(struct server *server, struct lua *state, char *in_script
 	if (LUA_TTABLE != lua_type(state->L, 1))
 	{
 		Log_Print(server->log, log_debug, "LUA: package is not a tablele.");
+		lua_pop(state->L, 1);
 		return false;
 	}
 
@@ -406,6 +466,18 @@ qboolean LUA_StateInit(struct server *server, struct lua *state, char *in_script
 	if (lua_pcall(state->L, 0, LUA_MULTRET, 0))
 	{
 		Log_Print(server->log, log_debug, "LUA: error loading \"helpers/server.lua\": %s", lua_tostring(state->L, -1));
+		return false;
+	}
+
+	if (luaL_loadfile(state->L, "lua/helpers/edict.lua"))
+	{
+		Log_Print(server->log, log_debug, "LUA: error loading \"helpers/edict.lua\": %s", lua_tostring(state->L, -1));
+		return false;
+	}
+
+	if (lua_pcall(state->L, 0, LUA_MULTRET, 0))
+	{
+		Log_Print(server->log, log_debug, "LUA: error loading \"helpers/edict.lua\": %s", lua_tostring(state->L, -1));
 		return false;
 	}
 
@@ -528,7 +600,7 @@ qboolean LUA_CallFunction(struct server *server, struct lua *state, struct clien
 	return true;
 }
 
-qboolean LUA_CallFunctionArguments(struct server *server, struct lua *state, char *function, int retvals, char *arguments, ...)
+qboolean LUA_CallFunctionArguments(struct server *server, struct lua *state, char *function, int retvals, qboolean prefix, char *arguments, ...)
 {
 	char buffer[1024];
 	char *c;
@@ -541,13 +613,17 @@ qboolean LUA_CallFunctionArguments(struct server *server, struct lua *state, cha
 	if (!server || !state || !function)
 		return false;
 
-//	printf("CFA before: %i\n", lua_gettop(state->L));
+	if (server->debug_lua_stack)
+		printf("CFA before: %i\n", lua_gettop(state->L));
 
-	snprintf(buffer, sizeof(buffer), "FUNC_%s", function);
+	snprintf(buffer, sizeof(buffer), "%s%s", prefix ? "FUNC_" : "", function);
 	lua_getglobal(state->L, buffer);
 	if (LUA_TFUNCTION != lua_type(state->L, -1))
 	{
 		printf("LUA: no function \"%s\"\n", function);
+		if (server->debug_lua_stack)
+			printf("CFA after: %i\n", lua_gettop(state->L));
+		lua_pop(state->L, 1);	// error and table
 		return false;
 	}
 	x = 0;
@@ -600,10 +676,13 @@ qboolean LUA_CallFunctionArguments(struct server *server, struct lua *state, cha
 	if (lua_pcall(state->L, x, retvals, 0))
 	{
 		printf("LUA error: \'%s\' %i\n", lua_tostring(state->L, -1), x);
+		if (server->debug_lua_stack)
+			printf("CFA after: %i\n", lua_gettop(state->L));
 		return false;
 	}
 
-//	printf("CFA after: %i\n", lua_gettop(state->L));
+	if (server->debug_lua_stack)
+		printf("CFA after: %i\n", lua_gettop(state->L));
 	return true;
 }
 
@@ -637,7 +716,70 @@ void lua_getvector(lua_State *L, vec3_t *vec)
 
 void LUA_GetSpawn(struct server *server, vec3_t *vec)
 {
-	LUA_CallFunctionArguments(server, &server->mod, "get_spawn", 1, NULL);
+	LUA_CallFunctionArguments(server, &server->mod, "get_spawn", 1, false, NULL);
 	lua_getvector(server->mod.L, vec);
 	lua_pop(server->mod.L, 1);
+}
+
+qboolean LUA_Server_SetVariable(struct server *server, struct lua *state, char *format, ...)
+{
+	char *string, *sval, *c;
+	int ival;
+	double dval;
+	va_list argptr;
+
+	if (!server || !state || !format)
+		return false;
+
+	if (server->debug_lua_stack)
+		printf("SSV before: %i\n", lua_gettop(state->L));
+	lua_getglobal(state->L, "server");
+	if (LUA_TTABLE != lua_type(state->L, 1))
+	{
+		Log_Print(server->log, log_debug, "LUA: server is not a table.");
+		if (server->debug_lua_stack)
+			printf("SSV after: %i\n", lua_gettop(state->L));
+		return false;
+	}
+
+	va_start(argptr, format);
+
+	c = format;
+
+	while (*c)
+	{
+		string = (char *)va_arg(argptr, int *);
+		if (!string)
+		{
+			va_end(argptr);
+			return false;
+		}
+
+		switch (*c)
+		{
+			case 'd':
+			case 'f':
+				dval = (double)va_arg(argptr, double);
+				lua_pushnumber(state->L, dval);
+				break;
+			case 's':
+				sval = (char *)va_arg(argptr, int *);
+				lua_pushstring(state->L, sval);
+				break;
+			case 'i':
+				ival = (int)va_arg(argptr, int);
+				lua_pushnumber(state->L, ival);
+				break;
+		}
+		lua_setfield(state->L, -2, string);
+		c++;
+	}
+
+	lua_pop(state->L, 1);
+	va_end(argptr);
+
+	if (server->debug_lua_stack)
+		printf("SSV after: %i\n", lua_gettop(state->L));
+
+	return true;
 }

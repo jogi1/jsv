@@ -4,21 +4,9 @@ void Physics_Frame(struct server *server)
 {
 	int i;
 	int x;
-	static int j, k;
 	struct client *client;
+	struct edict *e;
 	vec3_t forward, right, up;
-
-	if (k == 0)
-		j++;
-	else
-		j--;
-
-	if (j < 0)
-		k = 0;
-
-	if (j > 77)
-		k = 1;
-
 
 	for (i=0; i<32; i++)
 	{
@@ -29,9 +17,9 @@ void Physics_Frame(struct server *server)
 
 		Vector_Angles(server->edicts[i+1].state.angles, forward, right, up);
 
-		Vector_Scale(up, 0.013 * client->ucmd_new.upmove, up);
-		Vector_Scale(forward, 0.013 * client->ucmd_new.forwardmove, forward);
-		Vector_Scale(right, 0.013 * client->ucmd_new.sidemove, right);
+		Vector_Scale(up, server->frametime * client->ucmd_new.upmove, up);
+		Vector_Scale(forward, server->frametime * client->ucmd_new.forwardmove, forward);
+		Vector_Scale(right, server->frametime * client->ucmd_new.sidemove, right);
 
 		Vector_Add(server->edicts[i+1].state.origin, server->edicts[i+1].state.origin, up);
 		Vector_Add(server->edicts[i+1].state.origin, server->edicts[i+1].state.origin, forward);
@@ -40,5 +28,16 @@ void Physics_Frame(struct server *server)
 		{
 			server->edicts[i+1].state.angles[x] = client->ucmd_new.angles[x];
 		}
+	}
+
+	for (i=MAX_CLIENTS+1; i<server->edicts_count; i++)
+	{
+		e = &server->edicts[i];
+		if (e->inuse == false)
+			continue;
+		if (e->nexttime > server->realtime)
+			continue;
+
+		LUA_CallFunctionArguments(server, &server->mod, "handle_entity", 0, false,  "u", e);
 	}
 }

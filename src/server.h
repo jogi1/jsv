@@ -389,6 +389,7 @@ struct edict
 	int deadflag;
 	int flags;
 	vec3_t absmin, absmax;
+	double nexttime;
 };
 
 struct server
@@ -435,6 +436,7 @@ struct server
 	int edicts_count;
 
 	double realtime;
+	double frametime;
 
 	unsigned int secbase; //for timing
 	time_t time_current;
@@ -442,6 +444,7 @@ struct server
 	struct log *log;
 	pthread_t log_thread;
 	unsigned int pid;
+	qboolean debug_lua_stack;
 };
 
 #include "net.h"

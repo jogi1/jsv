@@ -1,7 +1,10 @@
 
 -- not sure about this
 function server.precache_model (self, model, add)
-	return self.__precache_model(self.__pointer, model, add)
+	rval = self.__precache_model(self.__pointer, model, add)
+	rval.name = model;
+	self.precached_models[model] = rval;
+	return rval;
 end
 
 function server.precache_sound (self, sound)

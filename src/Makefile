@@ -47,7 +47,7 @@ endif
 
 ifeq ($(OS),freebsd)
 	LFLAGS+=-lm -lpthread
-	CFLAGS+=-D__FIX_THIS_WEIRD_BUG
+	CFLAGS+=-D__FIX_THIS_WEIRD_BUG__
 	INCPATH+=$(shell pkg-config --cflags lua-5.1)
 	LIBS+=$(shell pkg-config --libs lua-5.1)
 endif

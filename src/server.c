@@ -30,7 +30,7 @@ struct edict *Server_GetFreeEdict(struct server *server)
 	if (!server)
 		return NULL;
 
-	for (i=0; i<MAX_EDICTS; i++)
+	for (i=0; i<server->edicts_count; i++)
 	{
 		if (server->edicts[i].inuse == false)
 		{
@@ -46,6 +46,8 @@ struct edict *Server_GetFreeEdict(struct server *server)
 		return NULL;
 
 	server->edicts[server->edicts_count].inuse = true;
+	server->edicts[i].state.number = i;
+	server->edicts[i].baseline.number = i;
 	server->edicts_count++;
 	return &server->edicts[(server->edicts_count - 1)];
 }
@@ -541,7 +543,7 @@ static void Server_WriteEntitiesToClient(struct server *server, struct client *c
 
 	Server_WritePlayersToClient(server, client);
 
-	for (i=1+MAX_CLIENTS; i < MAX_EDICTS; i++, e = &server->edicts[i])
+	for (i=1+MAX_CLIENTS; i < server->edicts_count; i++, e = &server->edicts[i])
 	{
 		if (to->entities_count == MAX_PACKET_ENTITIES)
 			continue;
@@ -991,7 +993,7 @@ static void Server_LoadEntities(struct server *server, char *entity_string)
 		if (*c == '\n')
 			c--;
 		x = c - s + 1;
-		LUA_CallFunctionArguments(server, &server->mod, "entity_load", 0, "S", s, x);
+		LUA_CallFunctionArguments(server, &server->mod, "entity_load", 0, false, "S", s, x);
 		s = c;
 	}
 	LUA_CallFunction(server, &server->mod, NULL, "print_info");
@@ -1119,11 +1121,10 @@ static qboolean Server_LoadMap(struct server *server)
 		e->state.model_index = Server_PrecacheModel(server, buffer, true);
 	}
 
-
 	//load entities
 	LUA_CallFunction(server, &server->mod, NULL, "entity_preload");
 	Server_LoadEntities(server, server->map->entity_string);
-	Log_Print(server->log, log_debug, "%s", server->map->entity_string);
+	//Log_Print(server->log, log_debug, "%s", server->map->entity_string);
 	LUA_CallFunction(server, &server->mod, NULL, "entity_load_finished");
 
 	for (i=0; i<32; i++)
@@ -1189,8 +1190,14 @@ static void Server_Frame(struct server *server)
 	int i;
 
 	memset(&p, 0, sizeof(p));
+	if (server->frametime == 0)
+		server->frametime = 0.001;
+	server->frametime = server->realtime;
 	server->realtime = Tools_DoubleTime(server);
+	server->frametime = server->realtime - server->frametime;
 	time(&server->time_current);
+
+	LUA_Server_SetVariable(server, &server->mod, "dd", "realtime", server->realtime, "frametime", server->frametime);
 
 	while((r = NET_Recieve(server->net, &p.data, 4096, &p.address)) > 0)
 	{
@@ -1239,12 +1246,14 @@ int main (int argc, char *argv[])
 	server->pid = getpid();
 	time(&server->time_start);
 
-#ifdef __FIX_THIS_WEIRD_BUG
+#ifndef __FIX_THIS_WEIRD_BUG__
 	if (!(server->log = Log_Init(server)))
 	{
 		Print_Console("could not init logging...\n");
 	}
 #endif
+
+//	server->debug_lua_stack = true;
 
 	server_handles.server[0] = server;
 	server_handles.server[1] = NULL;
@@ -1261,7 +1270,7 @@ int main (int argc, char *argv[])
 			{
 				if(NET_Init(server))
 				{
-					Server_ChangeMap(server, "dm4");
+					Server_ChangeMap(server, "dm2");
 					Log_Print(server->log, log_main, "Starting Server on: %s:%i\n", server->ip? server->ip : "any", server->port);
 					server->run = true;
 					while (server->run)
