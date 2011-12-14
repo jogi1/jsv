@@ -11,6 +11,13 @@
 #include "lua_structs.h"
 #include "log_structs.h"
 #include "world_structs.h"
+#include "trace_structs.h"
+
+#define bound(a,b,c) ((a) >= (c) ? (a) : (b) < (a) ? (a) : (b) > (c) ? (c) : (b))
+
+#define	MOVE_NORMAL	0
+#define	MOVE_NOMONSTERS	1
+#define	MOVE_MISSILE	2
 
 #define MAX_SOUNDS 256
 #define MAX_MODELS 256
@@ -258,7 +265,7 @@ struct entity_state
 	int effects;
 
 	// server stuff... put this somewhere else?
-	vec3_t velocity, mins;
+	vec3_t velocity, mins, maxs;
 	int skin;
 	int health;
 };
@@ -390,6 +397,8 @@ struct edict
 	int flags;
 	vec3_t absmin, absmax;
 	double nexttime;
+	qboolean hullisallocated;
+	struct hull *hull;
 };
 
 struct server
@@ -460,6 +469,7 @@ struct server
 #include "log.h"
 #include "physics.h"
 #include "world.h"
+#include "trace.h"
 
 int Server_PrecacheSound(struct server *server, char *sound);
 int Server_PrecacheModel(struct server *server, char *model, qboolean add);
@@ -472,4 +482,4 @@ void Server_FullClientUpdateToClient(struct server *server, struct client *clien
 void Server_FullClientUpdate(struct server *server, struct client *client);
 int Server_PrecacheModelNet(struct server *server, char *model, qboolean add);
 struct edict *Server_GetEdictForInlineModel(struct server *server, char *model);
-
+struct hull *Server_HullForEdict(struct server *server, struct edict *edict, vec3_t mins, vec3_t maxs, vec3_t offset);

@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include "server.h"
 
-static qboolean CMD_isinvalidspawncount(struct server *server, struct client *client, int sc)
+static qboolean isinvalidspawncount(struct server *server, struct client *client, int sc)
 {
 	if (server->spawn_count != sc)
 	{
@@ -61,7 +61,7 @@ void CMD_Soundlist(struct server *server, struct client *client, struct tokenize
 	char **s;
 
 	sc = atoi(ts->tokens[1]);
-	if (CMD_isinvalidspawncount(server, client, sc))
+	if (isinvalidspawncount(server, client, sc))
 		return;
 
 	n = atoi(ts->tokens[2]);
@@ -99,7 +99,7 @@ void CMD_Modellist(struct server *server, struct client *client, struct tokenize
 	char **s;
 
 	sc = atoi(ts->tokens[1]);
-	if (CMD_isinvalidspawncount(server, client, sc))
+	if (isinvalidspawncount(server, client, sc))
 		return;
 
 	n = atoi(ts->tokens[2]);
@@ -142,7 +142,7 @@ void CMD_Prespawn(struct server *server, struct client *client, struct tokenized
 
 
 	sc = atoi(ts->tokens[1]);
-	if (CMD_isinvalidspawncount(server, client, sc))
+	if (isinvalidspawncount(server, client, sc))
 		return;
 
 	buf = atoi(ts->tokens[2]);
@@ -182,7 +182,7 @@ void CMD_Spawn(struct server *server, struct client *client, struct tokenized_st
 	int sc, i;
 
 	sc = atoi(ts->tokens[1]);
-	if (CMD_isinvalidspawncount(server, client, sc))
+	if (isinvalidspawncount(server, client, sc))
 		return;
 
 	i = atoi(ts->tokens[2]);
@@ -211,7 +211,7 @@ void CMD_Begin(struct server *server, struct client *client, struct tokenized_st
 	int sc;
 
 	sc = atoi(ts->tokens[1]);
-	if (CMD_isinvalidspawncount(server, client, sc))
+	if (isinvalidspawncount(server, client, sc))
 		return ;
 
 	Client_WriteReliable(client, "ccs", svc_print, 3, "welcome to my shitty server that doesnt do anything... yet!\n");

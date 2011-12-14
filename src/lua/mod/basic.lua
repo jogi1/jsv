@@ -15,27 +15,29 @@ items_types = {
 -- item types and corresponding models
 -- so that models will be automatically be preloaded for entities
 
-require "vector"
+require 'vector'
+require 'trains'
+require 'items'
 
 -- well, this really sucks :P
 items_types = {
 	item_health = {spawnflags = { "maps/b_bh10.bsp", "maps/b_bh25.bsp", "maps/b_bh100.bsp" }},
-	item_armor1 = {model="progs/armor.mdl", skinnum=0},
-	item_armor2 = {model="progs/armor.mdl", skinnum=1},
-	item_armorInv = {model="progs/armor.mdl", skinnum=2},
-	item_cells = {spawnflags = {"maps/b_batt0.bsp", "maps/b_batt1.bsp"}},
-	item_shells= {spawnflags = {"maps/b_shell0.bsp", "maps/b_shell1.bsp"}},
-	item_rockets = {spawnflags = {"maps/b_rock0.bsp", "maps/b_rock1.bsp"}},
-	item_spikes = {spawnflags = {"maps/b_nail0.bsp", "maps/b_nail1.bsp"}},
-	item_artifact_super_damage = {model="progs/quaddama.mdl"},
-	item_artifact_invisibility = {model="progs/invisibl.mdl"},
-	item_artifact_invulnerability = {model="progs/invulner.mdl"},
-	weapon_lightning = {model="progs/g_light.mdl"},
-	weapon_grenadelauncher = {model="progs/g_rock.mdl"},
-	weapon_rocketlauncher = {model="progs/g_rock2.mdl"},
-	weapon_supernailgun = {model="progs/g_nail2.mdl"},
-	weapon_nailgun = {model="progs/g_nail.mdl"},
-	weapon_supershotgun = {model="progs/g_shot.mdl"}
+	item_armor1 = {model="progs/armor.mdl", skinnum=0, size={mins={x=-16, y=-16, y=0}, maxs={x=16, y=16, z=56}}},
+	item_armor2 = {model="progs/armor.mdl", skinnum=1, size={mins={x=-16, y=-16, y=0}, maxs={x=16, y=16, z=56}}},
+	item_armorInv = {model="progs/armor.mdl", skinnum=2, size={mins={x=-16, y=-16, y=0}, maxs={x=16, y=16, z=56}}},
+	item_cells = {spawnflags = {"maps/b_batt0.bsp", "maps/b_batt1.bsp"}, size={mins={x=0, y=0, z=0}, maxs={x=32, y=32, z=56}}},
+	item_shells= {spawnflags = {"maps/b_shell0.bsp", "maps/b_shell1.bsp"}, size={mins={x=0, y=0, z=0}, maxs={x=32, y=32, z=56}}},
+	item_rockets = {spawnflags = {"maps/b_rock0.bsp", "maps/b_rock1.bsp"}, size={mins={x=0, y=0, z=0}, maxs={x=32, y=32, z=56}}},
+	item_spikes = {spawnflags = {"maps/b_nail0.bsp", "maps/b_nail1.bsp"}, size={mins={x=0, y=0, z=0}, maxs={x=32, y=32, z=56}}},
+	item_artifact_super_damage = {model="progs/quaddama.mdl", size={mins={x=-16, y=-16, z=-24}, maxs={x=16, y=16, z=32}}},
+	item_artifact_invisibility = {model="progs/invisibl.mdl", size={mins={x=-16, y=-16, z=-24}, maxs={x=16, y=16, z=32}}},
+	item_artifact_invulnerability = {model="progs/invulner.mdl", size={mins={x=-16, y=-16, z=-24}, maxs={x=16, y=16, z=32}}},
+	weapon_lightning = {model="progs/g_light.mdl", size={mins={x=-16, y=-16, y=0}, maxs={x=16, y=16, z=56}}},
+	weapon_grenadelauncher = {model="progs/g_rock.mdl", size={mins={x=-16, y=-16, y=0}, maxs={x=16, y=16, z=56}}},
+	weapon_rocketlauncher = {model="progs/g_rock2.mdl", size={mins={x=-16, y=-16, y=0}, maxs={x=16, y=16, z=56}}},
+	weapon_supernailgun = {model="progs/g_nail2.mdl", size={mins={x=-16, y=-16, y=0}, maxs={x=16, y=16, z=56}}},
+	weapon_nailgun = {model="progs/g_nail.mdl", size={mins={x=-16, y=-16, y=0}, maxs={x=16, y=16, z=56}}},
+	weapon_supershotgun = {model="progs/g_shot.mdl", size={mins={x=-16, y=-16, y=0}, maxs={x=16, y=16, z=56}}}
 };
 
 lightstyles = {
@@ -231,35 +233,25 @@ function entity_load (server_ptr, entity)
 		return
 	end
 
-	for key, value in pairs(items_types) do
-		if (lent.classname == key) then
-			server.entities[#server.entities +1 ] = lent;
-			if (value.spawnflags) then
-				local index = 1;
-				if (lent.spawnflags) then
-					index = index + lent.spawnflags;
-				end
-				server.entities[#server.entities]["model"] = value.spawnflags[index];
-			else
-				server.entities[#server.entities]["model"] = value.model;
-				if (value.skinnum) then
-					server.entities[#server.entities]["skinnum"] = value.skinnum;
-				end
-			end
-			return
-		end
+	if (lent.spawnflags) then
+		lent.spawnflags = tonumber(lent.spawnflags);
 	end
 
-	print(entity);
-	print("-------------------------------------------\n");
+	item_setup(lent);
+	server.entities[#server.entities + 1] = lent;
+
+--	print(entity);
+--	print("-------------------------------------------\n");
 end
 
 -- used to preload models read in by the map
 function FUNC_entity_load_finished (server_ptr)
 	local key, value;
 	local v, e;
+
 	for key, value in pairs(server.entities) do
-		server:precache_model(value["model"], true)
+		print ("table!:");
+		print (value);
 		v = edict.get_unused(server_ptr);
 		if (not server.edicts[v]) then
 			server.edicts[v] = {};
@@ -267,11 +259,12 @@ function FUNC_entity_load_finished (server_ptr)
 		server.edicts[v]["e_type"] = "static";
 		server.edicts[v]["entity"] = value;
 		server.edicts[v]["entities_index"] = key;
-		server.edicts[v]["model_index"] = server.precached_models[value["model"]].index;
-		--print ("test: " .. value["classname"] .. " - " .. server.edicts[v]["model_index"] .. " - " .. value["model"]);
+		server.edicts[v]["model_s"] = server:precache_model(value.model, true);
+		server.edicts[v]["model_index"] = server.edicts[v]["model_s"].index;
 		edict.set_modelindex(v, server.edicts[v]["model_index"]);
+
 		if (value["origin"]) then
-			--print (value.origin.x .. " " .. value.origin.y .. " " .. value.origin.z);
+			print ("origin: " .. value.origin.x .. " " .. value.origin.y .. " " .. value.origin.z);
 			edict.set_origin(v, value.origin);
 		end
 		if (value["angles"]) then
@@ -280,6 +273,19 @@ function FUNC_entity_load_finished (server_ptr)
 
 		if (value.skinnum) then
 			edict.set_skinnum(v, value.skinnum);
+		end
+
+		if (value.size) then
+
+			edict.set_mm(v, value.size.mins, value.size.maxs);
+
+			local stop = vector.from_values(value.origin.x, value.origin.y, value.origin.z - 256);
+			local trace = server:trace_edict(v, value.origin, stop, 0, nil);
+			if (trace) then
+--				print (value.origin.x .. " " .. value.origin.y .. " " .. value.origin.z);
+				print ("endpos: " .. trace.endpos.x .. " " .. trace.endpos.y .. " " .. trace.endpos.z);
+				edict.set_origin(v, trace.endpos);
+			end
 		end
 
 		-- this should always be last
@@ -312,105 +318,7 @@ function FUNC_entity_load_finished (server_ptr)
 	--]]
 
 	server.spawn_model = server:precache_model(server.spawn_model, true);
-	trains_setup();
-end
-
-function train_do(self, e)
-	local k, v;
-	local t = self.train;
-
-	t.traveled = t.traveled + server.frametime * t.speed;
-	if (t.traveled > t.path[t.position].distance) then
-		t.position = t.position + 1;
-		if (t.position > #t.path) then
-			t.position = 1;
-		end
-		t.traveled = 0;
-		t.wait = t.path[t.position].wait;
-		if (t.wait == nil) then
-			t.wait = 0;
-		end
-	end
-
-	if (t.wait > 0) then
-		t.wait = t.wait - server.frametime;
-		edict.set_origin(e, t.path[t.position].origin);
-	end
-
-	v = vector.scale(t.path[t.position].direction_vector, t.traveled/t.path[t.position].distance);
-	v = vector.add(v, t.path[t.position].origin);
-	edict.set_origin(e, v);
-end
-
-function trains_setup ()
-	local key, value, location, v, k, e, n;
-	for key, value in pairs(server.trains) do
-		train = value;
-		if (not train.speed) then
-			train.speed = 100;
-		end
-		train.position = 1;
-		train.path = {};
-		train.traveled = 0;
-		v = server:get_edict_for_inline_model(train.model);
-		train.edict = v;
-		train.wait = 0;
-		if (not server.edicts[v]) then
-			server.edicts[v] = {};
-		end
-		server.edicts[v].func = train_do;
-		server.edicts[v].train = train;
-		-- get first location
-		location = get_path_corner(train.target);
-		if (location == nil) then
-			return
-		end
-		train.model = server:precache_model(train.model, false);
-
-		train.path[#train.path + 1] = {};
-		if (location.wait) then
-			train.path[#train.path].wait = location.wait;
-		end
-
-		train.path[#train.path].origin = vector.subtract(location.origin, train.model.mins)
-		size = vector.subtract(train.model.maxs, train.model.mins);
-
-		train.path[#train.path].target = location.target;
-		train.path[#train.path].targetname = location.targetname;
-
-		local run = 1;
-
-		while (run == 1) do
-			location = get_path_corner(train.path[#train.path].target);
-			if (location == nil) then
-				return
-			end
-			train.path[#train.path + 1] = {};
-			train.path[#train.path].origin = vector.subtract(location.origin, train.model.mins)
-			train.path[#train.path].target = location.target;
-			train.path[#train.path].targetname = location.targetname;
-			if (location.target == train.path[1].targetname) then
-				run = 0;
-			end
-
-			train.path[#train.path].wait = 0;
-			if (location.wait) then
-				train.path[#train.path].wait = location.wait;
-			end
-		end
-
-		for k, v in pairs(train.path) do
-			if (k == #train.path) then
-				n = train.path[1];
-			else
-				n = train.path[k+1];
-			end
-			train.path[k].direction_vector = vector.subtract(n.origin, v.origin)
-			train.path[k].distance = vector.length(train.path[k].direction_vector);
-		end
-
-		edict.set_origin(train.path[1].origin);
-	end
+	trains.setup();
 end
 
 function get_path_corner(name)
@@ -426,7 +334,7 @@ function get_path_corner(name)
 end
 
 function get_spawn()
-	return server.spawns[1].origin;
+	return server.spawns[math.random(1, #server.spawns)].origin;
 end
 
 function FUNC_print_info()

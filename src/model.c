@@ -44,7 +44,7 @@ struct plane *Model_LoadPlanes(struct lump *lump, unsigned char *base, int *plan
 
 	dp = (struct dplane *)(base + lump->fileofs);
 
-	count = lump->filelen % sizeof(*dp);
+	count = lump->filelen / sizeof(*dp);
 
 	mp = calloc(count, sizeof(*mp));
 	if (mp == NULL)
@@ -67,11 +67,15 @@ struct plane *Model_LoadPlanes(struct lump *lump, unsigned char *base, int *plan
 		}
 
 		mpp->dist = LittleFloat(dp->dist);
+		if (isnan(mpp->dist))
+		{
+			exit(1);
+		}
 		mpp->type = LittleLong(dp->type);
 		mpp->signbits = bits;
 	}
 
-	return mpp;
+	return mp;
 }
 
 struct leaf *Model_LoadLeafs(struct lump *lump, unsigned char *base, int *leafs_count)
@@ -170,6 +174,7 @@ struct clipnode *Model_LoadClipnodes(struct lump *lump, unsigned char *base, int
 	in = (struct clipnode *)(base + lump->fileofs);
 
 	count = lump->filelen / sizeof(*in);
+	*nodes_count = count;
 	out = (struct clipnode *) calloc(count, sizeof(*in));
 	rout = out;
 

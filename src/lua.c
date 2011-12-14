@@ -69,6 +69,28 @@ static int EDICT_SetOrigin(lua_State *L)
 	return 1;
 }
 
+static int EDICT_SetMM(lua_State *L)
+{
+	struct edict *edict;
+	int i;
+
+	if (lua_isuserdata(L, 1))
+	{
+		edict = lua_touserdata(L, 1);
+		for (i=0; i<3; i++)
+		{
+			edict->state.mins[i] = lua_tonumber(L, i+2);
+		}
+		for (i=3; i<6; i++)
+		{
+			edict->state.maxs[i-3] = lua_tonumber(L, i+2);
+		}
+	}
+	return 1;
+}
+
+
+
 static int EDICT_SetAngles(lua_State *L)
 {
 	struct edict *edict;
@@ -116,6 +138,7 @@ static luaL_reg Edict_Functions_Methods[] =
 	{"remove", EDICT_Remove},
 	{"__set_origin", EDICT_SetOrigin},
 	{"__set_angles", EDICT_SetAngles},
+	{"__set_mm", EDICT_SetMM},
 	{"set_modelindex", EDICT_SetModelIndex},
 	{"set_baseline", EDICT_SetBaseline},
 	{"set_skinnum", EDICT_SetSkinNum},
@@ -167,7 +190,6 @@ static void LUA_Pushmodel(struct server *server, lua_State *L, int model_number)
 	if (server->model_precache[model_number][0] == '*')
 	{
 		i = atoi(server->model_precache[model_number] + 1);
-		printf("%s %i\n", server->model_precache[model_number], i);
 		if (i >= 0 && i < server->map->submodels_count)
 		{
 			Vector_Copy(mins, server->map->submodels[i].mins);
@@ -373,6 +395,86 @@ static int SFM_PrintToClientOOB(lua_State *L)
 }
 */
 
+static void puttraceonstack(lua_State *L, struct trace *trace)
+{
+	if (!L || !trace)
+		return;
+
+	// trace trable
+	lua_newtable(L);
+
+	lua_pushnumber(L, trace->fraction);
+	lua_setfield(L, -2, "fraction");
+
+	lua_pushboolean(L, trace->allsolid);
+	lua_setfield(L, -2, "allsolid");
+
+	// endpos
+	lua_pushstring(L,"endpos");
+	lua_newtable(L);
+	lua_pushstring(L,"x");
+	lua_pushnumber(L, trace->endpos[0]);
+	lua_settable(L, -3);
+	lua_pushstring(L,"y");
+	lua_pushnumber(L, trace->endpos[1]);
+	lua_settable(L, -3);
+	lua_pushstring(L,"z");
+	lua_pushnumber(L, trace->endpos[2]);
+	lua_settable(L, -3);
+	lua_settable(L, -3);
+
+}
+
+static int SFM_TraceEdict(lua_State *L)
+{
+	struct server *server;
+	struct edict *edict, *passedict;
+	struct trace *trace;
+	vec3_t start, stop;
+	int type;
+
+	if (lua_isuserdata(L, 1))
+	{
+		server = (struct server *)lua_touserdata(L, 1);
+		if (server)
+		{
+			if (lua_isuserdata(L, 2))
+			{
+				edict = (struct edict *)lua_touserdata(L, 2);
+				if (edict)
+				{
+					start[0] = lua_tonumber(L, 3);
+					start[1] = lua_tonumber(L, 4);
+					start[2] = lua_tonumber(L, 5);
+					stop[0] = lua_tonumber(L, 6);
+					stop[1] = lua_tonumber(L, 7);
+					stop[2] = lua_tonumber(L, 8);
+					type = lua_tonumber(L, 9);
+					passedict = NULL;
+					if (lua_isuserdata(L, 10))
+						passedict = (struct edict *)lua_touserdata(L, 10);
+
+					trace = Trace_Trace(server, NULL, edict->state.mins, edict->state.maxs, start, stop, type, passedict);
+					/*
+					printf("start: ");
+					PRINT_VEC(start);
+					printf("stop : ");
+					PRINT_VEC(stop);
+					printf("end  : ");
+					PRINT_VEC(trace->endpos);
+					*/
+
+					puttraceonstack(L, trace);
+					free(trace);
+					return 1;
+				}
+			}
+		}
+	}
+	lua_pushnil(L);
+	return 1;
+}
+
 static luaL_reg Server_Functions_Methods[] = 
 {
 	{"__precache_sound", SFM_PrecacheSound},
@@ -382,6 +484,7 @@ static luaL_reg Server_Functions_Methods[] =
 	{"__add_lightstyle", SFM_AddLightstyle},
 	{"__get_edict_for_inline_model", SFM_GetEdictForOnlineModel},
 	{"__print_to_client", SFM_PrintToClient},
+	{"__trace_edict", SFM_TraceEdict},
 	{0,0}
 };
 

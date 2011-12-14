@@ -21,6 +21,7 @@ SRC= \
 	md4.c \
 	vector.c \
 	world.c \
+	trace.c \
 	physics.c
 
 OBJ=$(SRC:.c=.o)

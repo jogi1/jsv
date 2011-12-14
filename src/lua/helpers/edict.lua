@@ -23,3 +23,7 @@ function edict.set_angle(e, x, y, z)
 
 	edict.__set_angle(e, x == nil and 0 or x, y == nil and 0 or y, z == nil and 0 or z);
 end
+
+function edict.set_mm(e, mins, maxs)
+	edict.__set_mm(e, mins.x, mins.y, mins.z, maxs.x, maxs.y, maxs.z);
+end

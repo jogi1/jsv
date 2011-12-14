@@ -1,5 +1,6 @@
 #ifndef TOOLS_H
 #define TOOLS_H
+#define PRINT_VEC(x) printf("%f %f %f\n", x[0], x[1], x[2]);
 short	ShortSwap (short s);
 int		LongSwap (int l);
 float	FloatSwap (float f);

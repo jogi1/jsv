@@ -1102,6 +1102,7 @@ static qboolean Server_LoadMap(struct server *server)
 	if (!e)
 		return false;
 	e->state.model_index = Server_PrecacheModel(server, buffer, true);
+	e->solid = SOLID_BSP;
 
 	for (i=0; i<MAX_CLIENTS; i++)
 	{
@@ -1232,6 +1233,8 @@ static void Server_Quit(struct server *server)
 int main (int argc, char *argv[])
 {
 	struct server *server;
+	int i;
+	struct plane *p;
 
 //	signal(SIGINT, Server_SignalHandler);
 	signal(SIGQUIT, Server_SignalHandler);
@@ -1270,7 +1273,7 @@ int main (int argc, char *argv[])
 			{
 				if(NET_Init(server))
 				{
-					Server_ChangeMap(server, "dm2");
+					Server_ChangeMap(server, "skull");
 					Log_Print(server->log, log_main, "Starting Server on: %s:%i\n", server->ip? server->ip : "any", server->port);
 					server->run = true;
 					while (server->run)
@@ -1384,4 +1387,109 @@ struct edict *Server_GetEdictForInlineModel(struct server *server, char *model)
 	m++;
 
 	return &server->edicts[MAX_CLIENTS + m];
+}
+
+struct hull *boxhull_allocate(void)
+{
+	struct hull *hull;
+	int i, side;
+
+	hull = calloc(1, sizeof(*hull));
+
+	if (hull)
+	{
+		hull->planes = calloc(6, sizeof(struct plane));
+		if (hull->planes)
+		{
+			hull->clipnodes = calloc(6, sizeof(struct clipnode));
+			if (hull->clipnodes)
+			{
+				hull->firstclipnode = 0;
+				hull->lastclipnode = 5;
+				for (i=0; i<6; i++)
+				{
+					side = i&1;
+					hull->clipnodes[i].children[side] = CONTENTS_EMPTY;
+					hull->clipnodes[i].children[side^1] = (i != 5) ? (i + 1) : CONTENTS_SOLID;
+					hull->planes[i].type = i>>1;
+					hull->planes[i].normal[i>>1] = 1;
+				}
+				return hull;
+			}
+			free(hull->planes);
+		}
+		free(hull);
+	}
+	return NULL;
+}
+
+static void boxhull_setup(struct hull *hull, vec3_t mins, vec3_t maxs)
+{
+	if (!hull)
+		return;
+
+	hull->planes[0].dist = maxs[0];
+	hull->planes[1].dist = mins[0];
+	hull->planes[2].dist = maxs[1];
+	hull->planes[3].dist = mins[1];
+	hull->planes[4].dist = maxs[2];
+	hull->planes[5].dist = mins[2];
+}
+
+static void boxhull_free(struct hull *hull)
+{
+	if (!hull)
+		return;
+
+	free(hull->clipnodes);
+	free(hull->planes);
+	free(hull);
+}
+
+struct hull *Server_HullForEdict(struct server *server, struct edict *edict, vec3_t mins, vec3_t maxs, vec3_t offset)
+{
+	vec3_t size, hullsmins, hullsmaxs;
+	int i;
+	struct hull *hull;
+
+	if (!server || !edict)
+		return NULL;
+
+	if (edict->solid == SOLID_BSP)
+	{
+		// this is only for map and submodels (i guess)
+#warning do movetype push check here
+		i = edict->state.model_index;
+
+		Vector_Subtract(size, maxs, mins);
+		if (size[0] <3)
+			hull = &server->map->submodels[i].hulls[0];
+		else if (size[0] <= 32)
+			hull = &server->map->submodels[i].hulls[1];
+		else
+			hull = &server->map->submodels[i].hulls[2];
+
+		// calculate offset
+		Vector_Subtract(offset, hull->clip_mins, maxs);
+		Vector_Add(offset, offset, edict->state.origin);
+	}
+	else
+	{
+		// build a hull
+		if (edict->hull)
+			hull = edict->hull;
+		else
+		{
+			hull = edict->hull = boxhull_allocate();
+			if (hull == NULL)
+				return NULL;
+			edict->hullisallocated = true;
+		}
+
+		boxhull_setup(hull, mins, maxs);
+
+		Vector_Copy(offset, edict->state.origin);
+	}
+
+	return hull;
 }

@@ -2,6 +2,11 @@
 -- not sure about this
 function server.precache_model (self, model, add)
 	rval = self.__precache_model(self.__pointer, model, add)
+	if (rval == nil) then
+		print (model);
+		print "rval is nil";
+		return nil;
+	end
 	rval.name = model;
 	self.precached_models[model] = rval;
 	return rval;
@@ -25,5 +30,9 @@ end
 
 function server.print_to_client(self, client, str)
 	self.__print_to_client(self.__pointer, client, str)
+end
+
+function server.trace_edict(self, e, start, stop, t_type, passedict)
+	return self.__trace_edict(self.__pointer, e, start.x, start.y, start.z, stop.x, stop.y, stop.z, t_type, passedict);
 end
 
