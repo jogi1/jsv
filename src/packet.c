@@ -463,7 +463,6 @@ int Packet_GetSizeV(const char *format, va_list *argptr_in)
 				break;
 			case 'B':
 				buf = (struct buffer *)va_arg(argptr, int *);
-				printf("%p\n",buf);
 				size += buf->position;
 				break;
 			case 'i':
@@ -472,7 +471,7 @@ int Packet_GetSizeV(const char *format, va_list *argptr_in)
 				break;
 			case 'C':
 			case 'S':
-				va_arg(argptr, short);
+				va_arg(argptr, int);
 				size += sizeof(short);
 				break;
 			case 'f':
@@ -564,7 +563,7 @@ qboolean Packet_WriteToBufferV(struct buffer *buffer, const char *format, va_lis
 				buffer->position += 4;
 				break;
 			case 'S':
-				short_val = (short)va_arg(argptr, short);
+				short_val = (short)va_arg(argptr, int);
 				memcpy(buffer->data + buffer->position, (const void*)&short_val, sizeof(short));
 				buffer->position += sizeof(short);
 				break;
@@ -592,7 +591,7 @@ qboolean Packet_WriteToBufferV(struct buffer *buffer, const char *format, va_lis
 				buffer->position++;
 				break;
 			case 'z':
-				sval = (char *)va_arg(argptr, int);
+				sval = (char *)va_arg(argptr, int *);
 				memcpy(buffer->data + buffer->position, (const void *)sval, strlen(sval));
 				buffer->position += strlen(sval);
 				break;
