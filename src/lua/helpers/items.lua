@@ -80,9 +80,9 @@ end
 
 function item_setup_cells(item)
 	if (item.spawnflags) then
-		item.model = "maps/b_shell1.bsp";
+		item.model = "maps/b_batt1.bsp";
 	else
-		item.model = "maps/b_shell0.bsp";
+		item.model = "maps/b_batt0.bsp";
 	end
 	item.size = {mins={x=0, y=0, z=0}, maxs={x=32, y=32, z=56}};
 	return item;

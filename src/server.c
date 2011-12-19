@@ -220,7 +220,7 @@ static qboolean Server_HandleArguments(struct server *server, int argc, char *ar
 			if (i+1 < argc)
 			{
 				server->data_dir = strdup(argv[i+1]);
-				if (server->ip == NULL)
+				if (server->data_dir == NULL)
 				{
 					Print_Console("allocating \"data_dir\" failed, default fallback will be used.\n");
 				}
@@ -1273,7 +1273,7 @@ int main (int argc, char *argv[])
 			{
 				if(NET_Init(server))
 				{
-					Server_ChangeMap(server, "skull");
+					Server_ChangeMap(server, "dm2");
 					Log_Print(server->log, log_main, "Starting Server on: %s:%i\n", server->ip? server->ip : "any", server->port);
 					server->run = true;
 					while (server->run)

@@ -264,7 +264,6 @@ function FUNC_entity_load_finished (server_ptr)
 		edict.set_modelindex(v, server.edicts[v]["model_index"]);
 
 		if (value["origin"]) then
-			print ("origin: " .. value.origin.x .. " " .. value.origin.y .. " " .. value.origin.z);
 			edict.set_origin(v, value.origin);
 		end
 		if (value["angles"]) then
@@ -283,7 +282,11 @@ function FUNC_entity_load_finished (server_ptr)
 			local trace = server:trace_edict(v, value.origin, stop, 0, nil);
 			if (trace) then
 --				print (value.origin.x .. " " .. value.origin.y .. " " .. value.origin.z);
+				print ("-------- trace start ---------");
+				print ("origin: " .. value.origin.x .. " " .. value.origin.y .. " " .. value.origin.z);
 				print ("endpos: " .. trace.endpos.x .. " " .. trace.endpos.y .. " " .. trace.endpos.z);
+				print ("model: " .. value.model);
+				print ("-------- trace stop ----------");
 				edict.set_origin(v, trace.endpos);
 			end
 		end
