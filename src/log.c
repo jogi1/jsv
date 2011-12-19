@@ -191,7 +191,7 @@ void Log_Print(struct log *log, enum log_type type, char *format, ...)
 	va_list argptr;
 	char buffer[8192];
 
-	if (!log)
+	if (log)
 	{
 		entry = calloc(1, sizeof(*entry));
 		if (!entry)
