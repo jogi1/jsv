@@ -192,19 +192,36 @@ void Log_Print(struct log *log, enum log_type type, char *format, ...)
 	char buffer[8192];
 
 	if (!log)
-		return;
+	{
+		entry = calloc(1, sizeof(*entry));
+		if (!entry)
+			return;
 
-	entry = calloc(1, sizeof(*entry));
-	if (!entry)
-		return;
+		va_start(argptr, format);
+		vsnprintf(buffer, sizeof(buffer), format, argptr);
+		va_end(argptr);
 
-	va_start(argptr, format);
-	vsnprintf(buffer, sizeof(buffer), format, argptr);
-	va_end(argptr);
-
-	entry->type = type;
-	entry->string = strdup(buffer);
-	time(&entry->time);
-	log->last->next = entry;
-	log->last = entry;
+		entry->type = type;
+		entry->string = strdup(buffer);
+		time(&entry->time);
+		log->last->next = entry;
+		log->last = entry;
+	}
+	else
+	{
+		va_start(argptr, format);
+		vsnprintf(buffer, sizeof(buffer), format, argptr);
+		va_end(argptr);
+		switch (log_type)
+		{
+			case log_main:
+				printf("main : %s\n", buffer);
+				break;
+			case log_debug:
+				printf("debug: %s\n", buffer);
+				break;
+			case log_lua:
+				printf("lua  : %s\n", buffer);
+				break;
+	}
 }
