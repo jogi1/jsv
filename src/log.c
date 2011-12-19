@@ -223,5 +223,6 @@ void Log_Print(struct log *log, enum log_type type, char *format, ...)
 			case log_lua:
 				printf("lua  : %s\n", buffer);
 				break;
+		}
 	}
 }
