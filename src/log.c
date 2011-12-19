@@ -212,7 +212,7 @@ void Log_Print(struct log *log, enum log_type type, char *format, ...)
 		va_start(argptr, format);
 		vsnprintf(buffer, sizeof(buffer), format, argptr);
 		va_end(argptr);
-		switch (log_type)
+		switch (type)
 		{
 			case log_main:
 				printf("main : %s\n", buffer);
