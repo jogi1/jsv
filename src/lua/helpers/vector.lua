@@ -65,4 +65,8 @@ function vector.length(self)
 	return math.sqrt(math.pow(self.x,2) + math.pow(self.y,2) + math.pow(self.z,2));
 end
 
+function vector.tostring(self)
+	return tostring(self.x) .. " " .. tostring(self.y) .. " " .. tostring(self.z);
+end
+
 

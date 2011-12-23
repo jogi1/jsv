@@ -47,10 +47,18 @@ qboolean NET_Init(struct server *server)
 					server->net = (struct net *)ni;
 					return true;
 				}
+				else
+				Log_Print(server->log, log_debug, "NET_Init: bind error \"%i\"", r);
 			}
+			else
+				Log_Print(server->log, log_debug, "NET_Init: ioctl error \"%i\"", r);
 		}
+		else
+			Log_Print(server->log, log_debug, "NET_Init: socket error");
 		free(ni);
 	}
+	else
+		Log_Print(server->log, log_debug, "NET_Init: allocating ni failed");
 	return false;
 }
 

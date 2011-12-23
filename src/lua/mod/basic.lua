@@ -283,6 +283,8 @@ function FUNC_entity_load_finished (server_ptr)
 			if (trace) then
 --				print (value.origin.x .. " " .. value.origin.y .. " " .. value.origin.z);
 				print ("-------- trace start ---------");
+				print ("mins: " .. vector.tostring(value.size.mins));
+				print ("maxs: " .. vector.tostring(value.size.maxs));
 				print ("origin: " .. value.origin.x .. " " .. value.origin.y .. " " .. value.origin.z);
 				print ("endpos: " .. trace.endpos.x .. " " .. trace.endpos.y .. " " .. trace.endpos.z);
 				print ("model: " .. value.model);

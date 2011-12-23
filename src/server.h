@@ -35,8 +35,6 @@
 #define	A2C_CLIENT_COMMAND	'B'	// + command line
 #define	S2M_SHUTDOWN		'C'
 
-
-
 #define	svc_bad			0
 #define	svc_nop			1
 #define	svc_disconnect		2
@@ -454,6 +452,7 @@ struct server
 	pthread_t log_thread;
 	unsigned int pid;
 	qboolean debug_lua_stack;
+	qboolean disable_log;
 };
 
 #include "net.h"

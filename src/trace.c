@@ -27,130 +27,124 @@ int Trace_RecursiveHullTrace(struct trace_local *tl, int num, float p1f, float p
 	struct hull *hull = tl->hull;
 	struct trace *trace = tl->trace;
 
-	/*
-	//printf("t_rht: %i - %f - %f\n", num, p1f, p2f);
-	*/
-	//printf("p1: ");
-	//PRINT_VEC(p1);
-	//printf("p2: ");
-	//PRINT_VEC(p2);
-
-start:
-	if (num < 0)
+	while (1)
 	{
-		tl->leafs_count++;
-		if (num == CONTENTS_SOLID)
+		if (num < 0)
 		{
-			if (tl->leafs_count == 1)
-				trace->startsolid = true;
-			return TR_SOLID;
+			tl->leafs_count++;
+			if (num == CONTENTS_SOLID)
+			{
+				if (tl->leafs_count == 1)
+					trace->startsolid = true;
+				return TR_SOLID;
+			}
+			else
+			{
+				if (num == CONTENTS_EMPTY)
+					trace->inopen = true;
+				else
+					trace->inwater = true;
+				return TR_EMPTY;
+			}
+		}
+
+		node = hull->clipnodes + num;
+
+		plane = hull->planes + node->planenum;
+
+		//printf("t_rht: %p %p %i %i %f ", node, plane, node->planenum, plane->type, plane->dist);
+		//PRINT_VEC(plane->normal);
+
+		if (plane->type < 3)
+		{
+			t1 = p1[plane->type] - plane->dist;
+			t2 = p2[plane->type] - plane->dist;
+			//printf("t_rht 1: t1, t2, plane->dist %f %f %f\n", t1, t2, plane->dist);
 		}
 		else
 		{
-			if (num == CONTENTS_EMPTY)
-				trace->inopen = true;
-			else
-				trace->inwater = true;
-			return TR_EMPTY;
+			t1 = Vector_DotProduct(plane->normal, p1) - plane->dist;
+			t2 = Vector_DotProduct(plane->normal, p2) - plane->dist;
+			//printf("t_rht 2: t1, t2, plane->dist %f %f %f\n", t1, t2, plane->dist);
 		}
+
+		if (t1 >= 0 && t2 >= 0)
+		{
+			num = node->children[0];
+			continue;
+		}
+
+		if (t1 < 0 && t2 < 0)
+		{
+			num = node->children[1];
+			continue;
+		}
+
+		frac = t1 / (t1 - t2);
+		frac = bound(0, frac, 1);
+		midf = p1f + (p2f - p1f) * frac;
+
+		for (i=0; i<3; i++)
+			mid[i] = p1[i] + frac * (p2[i] - p1[i]);
+
+		nearside = (t1 < t2) ? 1 : 0;
+		//printf("doing trace 1 %f %f\n", frac, midf);
+		check = Trace_RecursiveHullTrace(tl, node->children[nearside], p1f, midf, p1, mid);
+		if (check == TR_BLOCKED)
+		{
+			return check;
+		}
+
+		if (check == TR_SOLID && (trace->inopen  || trace->inwater))
+		{
+			return check;
+		}
+		oldcheck = check;
+
+		//printf("doing trace 2\n");
+		check = Trace_RecursiveHullTrace(tl, node->children[1 - nearside], midf, p2f, mid, p2);
+		if (check == TR_EMPTY || check == TR_BLOCKED)
+		{
+			return check;
+		}
+
+		if (oldcheck != TR_EMPTY)
+		{
+			return check;
+		}
+
+		if (!nearside)
+		{
+			Vector_Copy(trace->plane.normal, plane->normal);
+			trace->plane.dist = plane->dist;
+		}
+		else
+		{
+			Vector_Negate(trace->plane.normal, plane->normal);
+			trace->plane.dist = -plane->dist;
+		}
+
+		if (t1 < t2)
+			frac = (t1 + DIST_EPSILON) / (t1 - t2);
+		else
+			frac = (t1 - DIST_EPSILON) / (t1 - t2);
+
+		frac = bound(0, frac, 1);
+
+		midf = p1f + (p2f - p1f) * frac;
+
+		for (i=0; i<3; i++)
+			mid[i] = p1[i] + frac * (p2[i] - p1[i]);
+
+		trace->fraction = midf;
+
+		//printf("fraction: %f\n", midf);
+
+		Vector_Copy(trace->endpos, mid);
+
+		return TR_BLOCKED;
 	}
-
-	node = hull->clipnodes + num;
-
-	plane = hull->planes + node->planenum;
-
-	//printf("t_rht: %p %p %i %i %f ", node, plane, node->planenum, plane->type, plane->dist);
-	//PRINT_VEC(plane->normal);
-
-	if (plane->type < 3)
-	{
-		t1 = p1[plane->type] - plane->dist;
-		t2 = p2[plane->type] - plane->dist;
-		//printf("t_rht 1: t1, t2, plane->dist %f %f %f\n", t1, t2, plane->dist);
-	}
-	else
-	{
-		t1 = Vector_DotProduct(plane->normal, p1) - plane->dist;
-		t2 = Vector_DotProduct(plane->normal, p2) - plane->dist;
-		//printf("t_rht 2: t1, t2, plane->dist %f %f %f\n", t1, t2, plane->dist);
-	}
-
-	if (t1 >= 0 && t2 >= 0)
-	{
-		num = node->children[0];
-		//printf("going to start 1\n");
-		goto start;
-	}
-
-	if (t1 < 0 && t2 < 0)
-	{
-		num = node->children[1];
-		//printf("going to start 2\n");
-		goto start;
-	}
-
-	frac = t1 / (t1 - t2);
-	frac = bound(0, frac, 1);
-	midf = p1f + (p2f - p1f) * frac;
-
-	for (i=0; i<3; i++)
-		mid[i] = p1[i] + frac * (p2[i] - p1[i]);
-
-	nearside = (t1 < t2) ? 1 : 0;
-	//printf("doing trace 1 %f %f\n", frac, midf);
-	check = Trace_RecursiveHullTrace(tl, node->children[nearside], p1f, midf, p1, mid);
-	if (check == TR_BLOCKED)
-	{
-		return check;
-	}
-
-	if (check == TR_SOLID && (trace->inopen  || trace->inwater))
-	{
-		return check;
-	}
-	oldcheck = check;
-
-	//printf("doing trace 2\n");
-	check = Trace_RecursiveHullTrace(tl, node->children[1 - nearside], midf, p2f, mid, p2);
-	if (check == TR_EMPTY || check == TR_BLOCKED)
-	{
-		return check;
-	}
-
-	if (oldcheck != TR_EMPTY)
-	{
-		return check;
-	}
-
-	if (!nearside)
-	{
-		Vector_Copy(trace->plane.normal, plane->normal);
-		trace->plane.dist = plane->dist;
-	}
-	else
-	{
-		Vector_Negate(trace->plane.normal, plane->normal);
-		trace->plane.dist = -plane->dist;
-	}
-
-	if (t1 < t2)
-		frac = (t1 + DIST_EPSILON) / (t1 - t2);
-	else
-		frac = (t1 - DIST_EPSILON) / (t1 - t2);
-
-	frac = bound(0, frac, 1);
-
-	midf = p1f + (p2f - p1f) * frac;
-
-	for (i=0; i<3; i++)
-		mid[i] = p1[i] + frac * (p2[i] - p1[i]);
-
-	trace->fraction = midf;
-
-	//printf("fraction: %f\n", midf);
-
-	Vector_Copy(trace->endpos, mid);
-
+#warning maybe return smth else here
 	return TR_BLOCKED;
 }
 
@@ -239,36 +233,18 @@ struct trace *Trace_ClipMoveToEdict(struct server *server, struct edict *edict, 
 		return NULL;
 
 	hull = Server_HullForEdict(server, edict, mins, maxs, offset);
-	/*
-	printf("hull ptr1: %p\n", &server->map->submodels[0].hulls[1]);
-	printf("hull ptr2: %p\n", hull);
-	PRINT_VEC(hull->clip_mins);
-	PRINT_VEC(hull->clip_maxs);
+
 	printf("offset: ");
 	PRINT_VEC(offset);
-	*/
-
 	Vector_Subtract(start_l, start, offset);
 	Vector_Subtract(stop_l, stop, offset);
-	/*
-	printf("start_l: ");
-	PRINT_VEC(start_l);
-
-	printf("stop_l: ");
-	PRINT_VEC(stop_l);
-	*/
 
 	trace = Trace_HullTrace(NULL, hull, start_l, stop_l);
 
-	Vector_Add(trace->endpos, trace->endpos, offset);
+	Vector_Add(trace->endpos, offset, trace->endpos);
 
 	if (trace->fraction < 1 || trace->allsolid)
 		trace->e.ent = edict;
-
-	/*
-	printf("endpos: ");
-	PRINT_VEC(trace->endpos);
-	*/
 
 	return trace;
 }
@@ -278,14 +254,7 @@ struct trace *Trace_ClipMoveToEdict(struct server *server, struct edict *edict, 
 struct trace *Trace_Trace(struct server *server, struct trace *trace_in, vec3_t mins, vec3_t maxs, vec3_t start, vec3_t stop, int type, struct edict *pass_edict)
 {
 	struct trace *trace;
-
-	//trace through the level
-	//printf("trace starting ---------------------------\n");
-	//printf("ptr: %p %p\n", server->map->planes, server->map->planes + server->map->planes_count);
 	trace = Trace_ClipMoveToEdict(server, server->edicts, mins, maxs, start, stop);
-	//printf("%i\n", server->map->planes_count);
-	//printf("trace endet ------------------------------\n");
-
 	return trace;
 }
 

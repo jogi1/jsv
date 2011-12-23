@@ -1,10 +1,10 @@
 
 function item_setup_armor (item)
 	item.model = "progs/armor.mdl";
-	item.size = {mins={x=-16, y=-16, y=0}, maxs={x=16, y=16, z=56}};
+	item.size = {mins={x=-16, y=-16, z=0}, maxs={x=16, y=16, z=56}};
 	if (item.classname == "item_armor1") then
 		item.skinnum = 0;
-	elseif (item.classname == "item_armor1") then
+	elseif (item.classname == "item_armor2") then
 		item.skinnum = 1;
 	elseif (item.classname == "item_armorInv") then
 		item.skinnum = 2;

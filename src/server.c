@@ -148,15 +148,21 @@ static qboolean Server_DefaultArguments(struct server *server)
 	if (!server->data_dir)
 	{
 		server->data_dir = strdup("data");
-		if (!server->data_dir)
+		if (server->data_dir == NULL)
+		{
+			Log_Print(server->log, log_debug, "%s - data_dir strdup failed.", DEBUG_INFO);
 			return false;
+		}
 	}
 
 	if (!server->main_script)
 	{
 		server->main_script = strdup("main");
-		if (!server->main_script)
+		if (server->main_script == NULL)
+		{
+			Log_Print(server->log, log_debug, "%s - main script strdup failed.", DEBUG_INFO);
 			return false;
+		}
 	}
 
 	return true;
@@ -185,7 +191,7 @@ static qboolean Server_HandleArguments(struct server *server, int argc, char *ar
 					server->ip = strdup(argv[i+1]);
 					if (server->ip == NULL)
 					{
-						Print_Console("allocating \"ip\" failed, default fallback will be used.\n");
+						Log_Print(server->log, log_main, "allocating \"ip\" failed, default fallback will be used.\n");
 					}
 					i++;
 				}
@@ -198,7 +204,7 @@ static qboolean Server_HandleArguments(struct server *server, int argc, char *ar
 				server->main_script = strdup(argv[i+1]);
 				if (server->ip == NULL)
 				{
-					Print_Console("allocating \"script\" failed, default fallback will be used.\n");
+					Log_Print(server->log, log_main, "allocating \"script\" failed, default fallback will be used.\n");
 				}
 				i++;
 			}
@@ -210,7 +216,7 @@ static qboolean Server_HandleArguments(struct server *server, int argc, char *ar
 				server->mod_script = strdup(argv[i+1]);
 				if (server->ip == NULL)
 				{
-					Print_Console("allocating \"mod_script\" failed, default fallback will be used.\n");
+					Log_Print(server->log, log_main, "allocating \"mod_script\" failed, default fallback will be used.\n");
 				}
 				i++;
 			}
@@ -222,10 +228,14 @@ static qboolean Server_HandleArguments(struct server *server, int argc, char *ar
 				server->data_dir = strdup(argv[i+1]);
 				if (server->data_dir == NULL)
 				{
-					Print_Console("allocating \"data_dir\" failed, default fallback will be used.\n");
+					Log_Print(server->log, log_main, "allocating \"data_dir\" failed, default fallback will be used.\n");
 				}
 				i++;
 			}
+		}
+		else if (String_Compare(argv[i], "--disable_log"))
+		{
+			server->disable_log = true;
 		}
 	}
 	return true;
@@ -247,7 +257,7 @@ static void Server_HandleChallenge(struct server *server, struct packet *packet)
 
 		if (NET_CompareAdr(&server->challenges[i].address, &packet->address))
 		{
-			Print_Console("already got a challenge from \"%s\"\n", "replaceme with something usefull");
+			Log_Print(server->log, log_main, "already got a challenge from \"%s\"\n", "replaceme with something usefull");
 			return;
 		}
 	}
@@ -282,7 +292,7 @@ static void Client_SetupUserinfo(struct server *server, struct client *client, c
 	if (s)
 		snprintf(client->name, CLIENT_NAME_MAX, "%s", s);
 	else
-		Log_Print(server->log, log_debug, "could not set name!!!!!!!!\n");
+		Log_Print(server->log, log_debug, "%s - could not set name!", DEBUG_INFO);
 }
 
 static void Server_HandleConnect(struct server *server, struct packet *packet, struct tokenized_string *ts)
@@ -295,7 +305,7 @@ static void Server_HandleConnect(struct server *server, struct packet *packet, s
 	// check protocol
 	if (atoi(ts->tokens[1]) != 28)
 	{
-		Print_Console("wrong protocol version.\n");
+		Log_Print(server->log, log_main, "wrong protocol version.\n");
 		p = (char *)Packet_Create(&p_size, "ics", HEADER_ID, A2C_PRINT, "\nwrong protocol version.\n");
 		NET_Send(server->net, p, p_size, &packet->address);
 		free(p);
@@ -313,7 +323,7 @@ static void Server_HandleConnect(struct server *server, struct packet *packet, s
 	}
 	if (i == MAX_CHALLENGES)
 	{
-		Print_Console("wrong challenge\n");
+		Log_Print(server->log, log_main, "wrong challenge\n");
 		p = (char *)Packet_Create(&p_size, "ics", HEADER_ID, A2C_PRINT, "\nwrong challenge.\n");
 		NET_Send(server->net, p, p_size, &packet->address);
 		free(p);
@@ -1249,13 +1259,6 @@ int main (int argc, char *argv[])
 	server->pid = getpid();
 	time(&server->time_start);
 
-#ifndef __FIX_THIS_WEIRD_BUG__
-	if (!(server->log = Log_Init(server)))
-	{
-		Print_Console("could not init logging...\n");
-	}
-#endif
-
 //	server->debug_lua_stack = true;
 
 	server_handles.server[0] = server;
@@ -1263,17 +1266,20 @@ int main (int argc, char *argv[])
 
 	server->port = 27500;
 
-	Log_Print(server->log, log_debug, "sofar so good\n");
-
 	if (Server_HandleArguments(server, argc, argv))
 	{
+#ifndef __FIX_THIS_WEIRD_BUG__
+		if (server->disable_log == false)
+			if (!(server->log = Log_Init(server)))
+				Print_Console("could not init logging...\n");
+#endif
 		if (Server_DefaultArguments(server))
 		{
 			if(LUA_Init(server))
 			{
 				if(NET_Init(server))
 				{
-					Server_ChangeMap(server, "dm2");
+					Server_ChangeMap(server, "aerowalk");
 					Log_Print(server->log, log_main, "Starting Server on: %s:%i\n", server->ip? server->ip : "any", server->port);
 					server->run = true;
 					while (server->run)
@@ -1448,7 +1454,7 @@ static void boxhull_free(struct hull *hull)
 
 struct hull *Server_HullForEdict(struct server *server, struct edict *edict, vec3_t mins, vec3_t maxs, vec3_t offset)
 {
-	vec3_t size, hullsmins, hullsmaxs;
+	vec3_t size, hullmins, hullmaxs;
 	int i;
 	struct hull *hull;
 
@@ -1470,8 +1476,9 @@ struct hull *Server_HullForEdict(struct server *server, struct edict *edict, vec
 			hull = &server->map->submodels[i].hulls[2];
 
 		// calculate offset
-		Vector_Subtract(offset, hull->clip_mins, maxs);
+		Vector_Subtract(offset, hull->clip_mins, mins);
 		Vector_Add(offset, offset, edict->state.origin);
+		printf("this should happen\n");
 	}
 	else
 	{
@@ -1486,9 +1493,13 @@ struct hull *Server_HullForEdict(struct server *server, struct edict *edict, vec
 			edict->hullisallocated = true;
 		}
 
-		boxhull_setup(hull, mins, maxs);
+		Vector_Subtract(hullmins, mins, maxs);
+		Vector_Subtract(hullmaxs, maxs, mins);
+
+		boxhull_setup(hull, hullmins, hullmaxs);
 
 		Vector_Copy(offset, edict->state.origin);
+		printf("does this actually happen?\n");
 	}
 
 	return hull;

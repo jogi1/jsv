@@ -226,3 +226,11 @@ void Log_Print(struct log *log, enum log_type type, char *format, ...)
 		}
 	}
 }
+
+char *Log_GetDebugInfo(char *file, int line, char *function)
+{
+	static char buffer[2048];
+
+	snprintf(buffer, sizeof(buffer), "file: %s, line: %i, function: %s", file , line, function);
+	return buffer;
+}
