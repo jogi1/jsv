@@ -195,6 +195,7 @@ void CMD_Spawn(struct server *server, struct client *client, struct tokenized_st
 	}
 
 	Server_FullClientUpdateToClient(server, client);
+
 	Server_FullClientUpdate(server, client);
 
 	// send lightstyles

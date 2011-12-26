@@ -673,7 +673,6 @@ void Server_FullClientUpdate(struct server *server, struct client *client)
 {
 	int i;
 	struct buffer update;
-	char cbuf[1024];
 
 	update.position = 0;
 	if (!Server_CreateFullClientUpdate(server, client, &update))
@@ -685,8 +684,6 @@ void Server_FullClientUpdate(struct server *server, struct client *client)
 			continue;
 
 		Client_WriteReliable(&server->clients[i], "B", &update);
-		snprintf(cbuf, sizeof(cbuf), "cmd spawn %i %i\n", server->spawn_count, i);
-		Client_WriteReliable(client, "Bbs", &update, svc_stufftext, cbuf);
 	}
 }
 
@@ -697,14 +694,10 @@ void Server_FullClientUpdateToClient(struct server *server, struct client *clien
 {
 	int i;
 	struct buffer update;
-	char cbuf[1024];
 
 	for (i=0; i<MAX_CLIENTS; i++)
 	{
 		if (!server->clients[i].inuse)
-			continue;
-
-		if (client == &server->clients[i])
 			continue;
 
 		update.position = 0;
@@ -712,8 +705,7 @@ void Server_FullClientUpdateToClient(struct server *server, struct client *clien
 		if (!Server_CreateFullClientUpdate(server, &server->clients[i], &update))
 			continue;
 
-		Client_WriteReliable(client, "Bbs", &update, svc_stufftext, cbuf);
-		snprintf(cbuf, sizeof(cbuf), "cmd spawn %i %i\n", server->spawn_count, i);
+		Client_WriteReliable(client, "B", &update);
 	}
 }
 
