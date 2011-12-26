@@ -30,6 +30,12 @@ void Physics_Frame(struct server *server)
 
 		trace = Trace_Trace(server, NULL, e->state.mins, e->state.maxs, e->state.origin, end, 0, e);
 		Vector_Copy(e->state.origin, trace->endpos);
+		/*
+		printf("mins: ");
+		PRINT_VEC(e->state.mins);
+		printf("maxs: ");
+		PRINT_VEC(e->state.maxs);
+		*/
 
 		/*
 		Vector_Add(server->edicts[i+1].state.origin, server->edicts[i+1].state.origin, up);

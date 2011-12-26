@@ -427,3 +427,10 @@ function handle_entity (server_ptr, edict_in)
 	end
 end
 
+function put_client_on_server (server_ptr, client, edict_in)
+	local mins = { x = -16, y = -16, z = -24};
+	local maxs = { x = 16, y = 16, z = 32};
+	edict.set_mm(edict_in, mins, maxs);
+	print "test!";
+end
+

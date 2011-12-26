@@ -203,7 +203,9 @@ void CMD_Spawn(struct server *server, struct client *client, struct tokenized_st
 
 #warning really fix this!
 
+	LUA_CallFunctionArguments(server, &server->mod, "put_client_on_server", 0, false, "uu", client, &server->edicts[client - server->clients + 1]);
 	Client_WriteReliable(client, "cs", svc_stufftext, "skins\n");
+
 }
 
 void CMD_Begin(struct server *server, struct client *client, struct tokenized_string *ts)
