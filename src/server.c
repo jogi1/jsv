@@ -673,6 +673,7 @@ void Server_FullClientUpdate(struct server *server, struct client *client)
 {
 	int i;
 	struct buffer update;
+	char cbuf[1024];
 
 	update.position = 0;
 	if (!Server_CreateFullClientUpdate(server, client, &update))
