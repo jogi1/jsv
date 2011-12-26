@@ -437,15 +437,24 @@ static qboolean Server_WriteDelta(struct server *server, struct client *client, 
 	if (bits & U_ORIGIN1)
 		Client_Write(client, "C", to->origin[0]);
 	if (bits & U_ANGLE1)
+	{
+		printf("angle0\n");
 		Client_Write(client, "A", to->angles[0]);
+	}
 	if (bits & U_ORIGIN2)
 		Client_Write(client, "C", to->origin[1]);
 	if (bits & U_ANGLE2)
+	{
+		printf("angle1\n");
 		Client_Write(client, "A", to->angles[1]);
+	}
 	if (bits & U_ORIGIN3)
 		Client_Write(client, "C", to->origin[2]);
 	if (bits & U_ANGLE3)
+	{
+		printf("angle2\n");
 		Client_Write(client, "A", to->angles[2]);
+	}
 
 	return true;
 }
@@ -675,6 +684,8 @@ void Server_FullClientUpdate(struct server *server, struct client *client)
 			continue;
 
 		Client_WriteReliable(&server->clients[i], "B", &update);
+		snprintf(cbuf, sizeof(cbuf), "cmd spawn %i %i\n", server->spawn_count, i);
+		Client_WriteReliable(client, "Bbs", &update, svc_stufftext, cbuf);
 	}
 }
 
@@ -700,8 +711,8 @@ void Server_FullClientUpdateToClient(struct server *server, struct client *clien
 		if (!Server_CreateFullClientUpdate(server, &server->clients[i], &update))
 			continue;
 
-		snprintf(cbuf, sizeof(cbuf), "cmd spawn %i %i\n", server->spawn_count, i);
 		Client_WriteReliable(client, "Bbs", &update, svc_stufftext, cbuf);
+		snprintf(cbuf, sizeof(cbuf), "cmd spawn %i %i\n", server->spawn_count, i);
 	}
 }
 
