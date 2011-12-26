@@ -862,12 +862,6 @@ static void Server_ProcessMessage(struct server *server ,struct packet *packet, 
 	if (print_packets)
 		printf("client(%i): ", clientid);
 
-	if (client == NULL)
-	{
-		printf("wtf?\n");
-		return;
-	}
-
 	i = packet->data.data.sequence.c[0]
 		+ (packet->data.data.sequence.c[1] << 8)
 		+ (packet->data.data.sequence.c[2] << 16)
@@ -1315,7 +1309,7 @@ int main (int argc, char *argv[])
 			{
 				if(NET_Init(server))
 				{
-					Server_ChangeMap(server, "aerowalk");
+					Server_ChangeMap(server, "skull");
 					Log_Print(server->log, log_main, "Starting Server on: %s:%i\n", server->ip? server->ip : "any", server->port);
 					server->run = true;
 					while (server->run)
