@@ -548,11 +548,19 @@ static void Server_WritePlayersToClient(struct server *server , struct client *c
 static void Server_WriteStatsToClient(struct server *server, struct client *client)
 {
 	int i, stats[MAX_CL_STATS];
+	struct edict *e;
 
+	e = &server->edicts[client - server->clients + 1];
 	for (i=0; i<MAX_CL_STATS;i++)
 	{
 #warning fix this
 		stats[i] = 10;
+		if (i == STAT_SHELLS)
+			stats[i] = e->state.origin[0];
+		if (i == STAT_NAILS)
+			stats[i] = e->state.origin[1];
+		if (i == STAT_ROCKETS)
+			stats[i] = e->state.origin[2];
 		if (stats[i] == client->stats[i])
 			continue;
 
@@ -560,7 +568,7 @@ static void Server_WriteStatsToClient(struct server *server, struct client *clie
 		if (stats[i] >= 0 && stats[i] <= 255)
 			Client_WriteReliable(client, "bbb", svc_updatestat, i, stats[i]);
 		else
-			Client_WriteReliable(client, "bbi", svc_updatestat, i, stats[i]);
+			Client_WriteReliable(client, "bbi", svc_updatestatlong, i, stats[i]);
 	}
 }
 

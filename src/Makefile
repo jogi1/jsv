@@ -1,4 +1,4 @@
-CC=clang
+CC?= clang
 EXE=jsv
 
 INCPATH= \

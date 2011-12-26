@@ -19,27 +19,6 @@ require 'vector'
 require 'trains'
 require 'items'
 
--- well, this really sucks :P
-items_types = {
-	item_health = {spawnflags = { "maps/b_bh10.bsp", "maps/b_bh25.bsp", "maps/b_bh100.bsp" }},
-	item_armor1 = {model="progs/armor.mdl", skinnum=0, size={mins={x=-16, y=-16, y=0}, maxs={x=16, y=16, z=56}}},
-	item_armor2 = {model="progs/armor.mdl", skinnum=1, size={mins={x=-16, y=-16, y=0}, maxs={x=16, y=16, z=56}}},
-	item_armorInv = {model="progs/armor.mdl", skinnum=2, size={mins={x=-16, y=-16, y=0}, maxs={x=16, y=16, z=56}}},
-	item_cells = {spawnflags = {"maps/b_batt0.bsp", "maps/b_batt1.bsp"}, size={mins={x=0, y=0, z=0}, maxs={x=32, y=32, z=56}}},
-	item_shells= {spawnflags = {"maps/b_shell0.bsp", "maps/b_shell1.bsp"}, size={mins={x=0, y=0, z=0}, maxs={x=32, y=32, z=56}}},
-	item_rockets = {spawnflags = {"maps/b_rock0.bsp", "maps/b_rock1.bsp"}, size={mins={x=0, y=0, z=0}, maxs={x=32, y=32, z=56}}},
-	item_spikes = {spawnflags = {"maps/b_nail0.bsp", "maps/b_nail1.bsp"}, size={mins={x=0, y=0, z=0}, maxs={x=32, y=32, z=56}}},
-	item_artifact_super_damage = {model="progs/quaddama.mdl", size={mins={x=-16, y=-16, z=-24}, maxs={x=16, y=16, z=32}}},
-	item_artifact_invisibility = {model="progs/invisibl.mdl", size={mins={x=-16, y=-16, z=-24}, maxs={x=16, y=16, z=32}}},
-	item_artifact_invulnerability = {model="progs/invulner.mdl", size={mins={x=-16, y=-16, z=-24}, maxs={x=16, y=16, z=32}}},
-	weapon_lightning = {model="progs/g_light.mdl", size={mins={x=-16, y=-16, y=0}, maxs={x=16, y=16, z=56}}},
-	weapon_grenadelauncher = {model="progs/g_rock.mdl", size={mins={x=-16, y=-16, y=0}, maxs={x=16, y=16, z=56}}},
-	weapon_rocketlauncher = {model="progs/g_rock2.mdl", size={mins={x=-16, y=-16, y=0}, maxs={x=16, y=16, z=56}}},
-	weapon_supernailgun = {model="progs/g_nail2.mdl", size={mins={x=-16, y=-16, y=0}, maxs={x=16, y=16, z=56}}},
-	weapon_nailgun = {model="progs/g_nail.mdl", size={mins={x=-16, y=-16, y=0}, maxs={x=16, y=16, z=56}}},
-	weapon_supershotgun = {model="progs/g_shot.mdl", size={mins={x=-16, y=-16, y=0}, maxs={x=16, y=16, z=56}}}
-};
-
 lightstyles = {
 	"m",
 	"mmnmmommommnonmmonqnmmo",
@@ -393,6 +372,7 @@ function FUNC_show_spawns ()
 		for k, v in pairs(server.spawns) do
 			v.edict = edict.get_unused(server.__pointer);
 			edict.set_origin(v.edict, v.origin.x, v.origin.y, v.origin.z);
+			server:print("origin: " .. v.origin.x .. " - " ..  v.origin.y .. " - " .. v.origin.z);
 			if (v.angles) then
 				edict.set_angles(v.edict, v.angles.x, v.angles.y, v.angles.z);
 			end
