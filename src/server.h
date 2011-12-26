@@ -154,6 +154,29 @@
 
 #define	U_CHECKMOREBITS	((1<<9) - 1)
 
+//
+// stats are integers communicated to the client by the server
+//
+#define	MAX_CL_STATS			32
+#define	STAT_HEALTH				0
+//#define	STAT_FRAGS				1
+#define	STAT_WEAPON				2
+#define	STAT_AMMO				3
+#define	STAT_ARMOR				4
+//#define	STAT_WEAPONFRAME		5
+#define	STAT_SHELLS				6
+#define	STAT_NAILS				7
+#define	STAT_ROCKETS			8
+#define	STAT_CELLS				9
+#define	STAT_ACTIVEWEAPON		10
+#define	STAT_TOTALSECRETS		11
+#define	STAT_TOTALMONSTERS		12
+#define	STAT_SECRETS			13		// bumped on client side by svc_foundsecret
+#define	STAT_MONSTERS			14		// bumped by svc_killedmonster
+#define	STAT_ITEMS				15
+#define	STAT_VIEWHEIGHT			16		// Z_EXT_VIEWHEIGHT extension
+#define STAT_TIME				17		// Z_EXT_TIME extension
+
 
 enum client_state
 {
@@ -304,6 +327,7 @@ struct client
 	qboolean inuse;
 	qboolean packet_recieved;
 	qboolean spectator;
+
 	int id;
 	int challenge;
 	int qport;
@@ -324,6 +348,7 @@ struct client
 	struct buffer packet;
 	struct buffer oob_print;
 	struct frame frames[UPDATE_BACKUP];
+	int stats[MAX_CL_STATS];
 
 	char *fulluserinfo;
 	char name[CLIENT_NAME_MAX];

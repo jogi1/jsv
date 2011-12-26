@@ -205,7 +205,6 @@ void CMD_Spawn(struct server *server, struct client *client, struct tokenized_st
 
 	LUA_CallFunctionArguments(server, &server->mod, "put_client_on_server", 0, false, "uu", client, &server->edicts[client - server->clients + 1]);
 	Client_WriteReliable(client, "cs", svc_stufftext, "skins\n");
-
 }
 
 void CMD_Begin(struct server *server, struct client *client, struct tokenized_string *ts)
@@ -216,7 +215,7 @@ void CMD_Begin(struct server *server, struct client *client, struct tokenized_st
 	if (isinvalidspawncount(server, client, sc))
 		return ;
 
-	Client_WriteReliable(client, "ccs", svc_print, 3, "welcome to my shitty server that doesnt do anything... yet!\n");
+	Client_WriteReliable(client, "ccs", svc_print, 3, "welcome to my shitty server that doesn't do anything... yet!\n");
 
 	client->state = cs_spawned;
 }

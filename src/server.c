@@ -536,6 +536,25 @@ static void Server_WritePlayersToClient(struct server *server , struct client *c
 	}
 }
 
+static void Server_WriteStatsToClient(struct server *server, struct client *client)
+{
+	int i, stats[MAX_CL_STATS];
+
+	for (i=0; i<MAX_CL_STATS;i++)
+	{
+#warning fix this
+		stats[i] = 10;
+		if (stats[i] == client->stats[i])
+			continue;
+
+		client->stats[i] = stats[i];
+		if (stats[i] >= 0 && stats[i] <= 255)
+			Client_WriteReliable(client, "bbb", svc_updatestat, i, stats[i]);
+		else
+			Client_WriteReliable(client, "bbi", svc_updatestat, i, stats[i]);
+	}
+}
+
 static void Server_WriteEntitiesToClient(struct server *server, struct client *client)
 {
 	struct packet_entities *to;
@@ -666,10 +685,14 @@ void Server_FullClientUpdateToClient(struct server *server, struct client *clien
 {
 	int i;
 	struct buffer update;
+	char cbuf[1024];
 
 	for (i=0; i<MAX_CLIENTS; i++)
 	{
 		if (!server->clients[i].inuse)
+			continue;
+
+		if (client == &server->clients[i])
 			continue;
 
 		update.position = 0;
@@ -677,7 +700,8 @@ void Server_FullClientUpdateToClient(struct server *server, struct client *clien
 		if (!Server_CreateFullClientUpdate(server, &server->clients[i], &update))
 			continue;
 
-		Client_WriteReliable(client, "B", &update);
+		snprintf(cbuf, sizeof(cbuf), "cmd spawn %i %i\n", server->spawn_count, i);
+		Client_WriteReliable(client, "Bbs", &update, svc_stufftext, cbuf);
 	}
 }
 
@@ -745,6 +769,7 @@ static void Server_SendPacket(struct server *server, struct client *client)
 		Server_WriteEntitiesToClient(server, c);
 		if (Buffer_Copy(&packet, &c->message, true))
 			c->message.position = 0;
+		Server_WriteStatsToClient(server, c);
 	}
 
 	//Buffer_Copy(&server->datagram, &packet, true);
