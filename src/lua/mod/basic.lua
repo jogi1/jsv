@@ -250,8 +250,6 @@ function FUNC_entity_load_finished (server_ptr)
 	local v, e;
 
 	for key, value in pairs(server.entities) do
-		print ("table!:");
-		print (value);
 		v = edict.get_unused(server_ptr);
 		if (not server.edicts[v]) then
 			server.edicts[v] = {};
@@ -281,14 +279,6 @@ function FUNC_entity_load_finished (server_ptr)
 			local stop = vector.from_values(value.origin.x, value.origin.y, value.origin.z - 256);
 			local trace = server:trace_edict(v, value.origin, stop, 0, nil);
 			if (trace) then
---				print (value.origin.x .. " " .. value.origin.y .. " " .. value.origin.z);
-				print ("-------- trace start ---------");
-				print ("mins: " .. vector.tostring(value.size.mins));
-				print ("maxs: " .. vector.tostring(value.size.maxs));
-				print ("origin: " .. value.origin.x .. " " .. value.origin.y .. " " .. value.origin.z);
-				print ("endpos: " .. trace.endpos.x .. " " .. trace.endpos.y .. " " .. trace.endpos.z);
-				print ("model: " .. value.model);
-				print ("-------- trace stop ----------");
 				edict.set_origin(v, trace.endpos);
 			end
 		end
@@ -343,14 +333,14 @@ function get_spawn()
 end
 
 function FUNC_print_info()
-	print("entites info etc:");
-	print("lights: " .. #server.lights);
-	print("spawns: " .. #server.spawns);
-	print("entities: " .. #server.entities);
-	print("telporters: " .. #server.teleporter_trigger);
-	print("teleporter_destination: " .. #server.teleporter_destination);
-	print("doors: " .. #server.doors);
-	print("trains: " .. #server.trains);
+	server:print("entites info etc:");
+	server:print("lights: " .. #server.lights);
+	server:print("spawns: " .. #server.spawns);
+	server:print("entities: " .. #server.entities);
+	server:print("telporters: " .. #server.teleporter_trigger);
+	server:print("teleporter_destination: " .. #server.teleporter_destination);
+	server:print("doors: " .. #server.doors);
+	server:print("trains: " .. #server.trains);
 end
 
 function FUNC_show_times (server_ptr, client)
@@ -403,12 +393,10 @@ function FUNC_show_spawns ()
 		for k, v in pairs(server.spawns) do
 			v.edict = edict.get_unused(server.__pointer);
 			edict.set_origin(v.edict, v.origin.x, v.origin.y, v.origin.z);
-			--print (v.origin.x .. " " .. v.origin.y .. " " .. v.origin.z .. " " .. server.spawn_model);
 			if (v.angles) then
 				edict.set_angles(v.edict, v.angles.x, v.angles.y, v.angles.z);
 			end
 			edict.set_modelindex(v.edict, server.spawn_model);
-			--edict.set_baseline(v);
 		end
 		server.show_spawns = true;
 	else
@@ -431,6 +419,6 @@ function put_client_on_server (server_ptr, client, edict_in)
 	local mins = { x = -16, y = -16, z = -24};
 	local maxs = { x = 16, y = 16, z = 32};
 	edict.set_mm(edict_in, mins, maxs);
-	print "test!";
+	server:print("test!");
 end
 

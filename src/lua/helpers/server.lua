@@ -3,8 +3,8 @@
 function server.precache_model (self, model, add)
 	rval = self.__precache_model(self.__pointer, model, add)
 	if (rval == nil) then
-		print (model);
-		print "rval is nil";
+		server:print(model);
+		server:print("rval is nil");
 		return nil;
 	end
 	rval.name = model;
@@ -36,3 +36,11 @@ function server.trace_edict(self, e, start, stop, t_type, passedict)
 	return self.__trace_edict(self.__pointer, e, start.x, start.y, start.z, stop.x, stop.y, stop.z, t_type, passedict);
 end
 
+function server.print(self, ...)
+	local str = "";
+	local v, k;
+	for k, v in ipairs (arg) do
+		str = str .. tostring(v);
+	end
+	server.__print(self.__pointer, str);
+end

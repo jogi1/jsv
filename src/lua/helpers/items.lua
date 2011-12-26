@@ -17,7 +17,7 @@ function item_setup_health (item)
 		item.model = "maps/b_bh25.bsp";
 		item.value = 25;
 	else
-		print (item.spawnflags);
+		server:print (item.spawnflags);
 		if (item.spawnflags == 2) then
 			item.model = "maps/b_bh100.bsp";
 			item.value = 100;

@@ -475,6 +475,25 @@ static int SFM_TraceEdict(lua_State *L)
 	return 1;
 }
 
+static int SFM_Print(lua_State *L)
+{
+	struct server *server;
+	const char *s;
+
+	if (lua_isuserdata(L, 1))
+	{
+		server = (struct server *)lua_touserdata(L, 1);
+		if (lua_isstring(L, 2))
+		{
+			s = luaL_checkstring(L, 2);
+			Log_Print(server->log, log_lua, s);
+		}
+	}
+	return 1;
+}
+
+
+
 static luaL_reg Server_Functions_Methods[] = 
 {
 	{"__precache_sound", SFM_PrecacheSound},
@@ -485,6 +504,7 @@ static luaL_reg Server_Functions_Methods[] =
 	{"__get_edict_for_inline_model", SFM_GetEdictForOnlineModel},
 	{"__print_to_client", SFM_PrintToClient},
 	{"__trace_edict", SFM_TraceEdict},
+	{"__print", SFM_Print},
 	{0,0}
 };
 
@@ -558,6 +578,11 @@ qboolean LUA_StateInit(struct server *server, struct lua *state, char *in_script
 
 	LUA_RegisterFunctions("server", state->L, Server_Functions_Methods, Server_Functions_Meta);
 	LUA_RegisterFunctions("edict", state->L, Edict_Functions_Methods, Edict_Functions_Meta);
+
+	//replace print
+//	lua_register(state->L, "__print", LUA_Print);
+	lua_pushnil(state->L);
+	lua_setglobal(state->L, "print");
 
 	// load the server helper
 	if (luaL_loadfile(state->L, "lua/helpers/server.lua"))
