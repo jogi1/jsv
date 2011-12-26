@@ -36,6 +36,7 @@ qboolean NET_Init(struct server *server)
 			r = ioctl(ni->socket, FIONBIO, &one);
 			if (r == 0)
 			{
+				memset(&addr, 0, sizeof(struct sockaddr_in));
 				addr.sin_family = AF_INET;
 				addr.sin_port = htons(server->port);
 				*(unsigned int *)&addr.sin_addr.s_addr = 0;

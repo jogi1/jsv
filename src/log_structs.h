@@ -13,7 +13,7 @@ enum log_type
 struct log_entry
 {
 	qboolean done;
-	enum log_type;
+	enum log_type log_type;
 	int player_num;
 	unsigned int type;
 	char *string;
