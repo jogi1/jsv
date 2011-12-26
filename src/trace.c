@@ -4,6 +4,12 @@
 
 #define DIST_EPSILON 0.03125
 
+struct clip
+{
+	struct trace *trace;
+	vec3_t boxmins, boxmaxs;
+};
+
 struct trace_local
 {
 	struct hull *hull;
@@ -234,8 +240,6 @@ struct trace *Trace_ClipMoveToEdict(struct server *server, struct edict *edict, 
 
 	hull = Server_HullForEdict(server, edict, mins, maxs, offset);
 
-	printf("offset: ");
-	PRINT_VEC(offset);
 	Vector_Subtract(start_l, start, offset);
 	Vector_Subtract(stop_l, stop, offset);
 
@@ -254,6 +258,8 @@ struct trace *Trace_ClipMoveToEdict(struct server *server, struct edict *edict, 
 struct trace *Trace_Trace(struct server *server, struct trace *trace_in, vec3_t mins, vec3_t maxs, vec3_t start, vec3_t stop, int type, struct edict *pass_edict)
 {
 	struct trace *trace;
+
+	//clip to map
 	trace = Trace_ClipMoveToEdict(server, server->edicts, mins, maxs, start, stop);
 	return trace;
 }

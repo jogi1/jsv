@@ -1478,7 +1478,6 @@ struct hull *Server_HullForEdict(struct server *server, struct edict *edict, vec
 		// calculate offset
 		Vector_Subtract(offset, hull->clip_mins, mins);
 		Vector_Add(offset, offset, edict->state.origin);
-		printf("this should happen\n");
 	}
 	else
 	{
@@ -1499,7 +1498,6 @@ struct hull *Server_HullForEdict(struct server *server, struct edict *edict, vec
 		boxhull_setup(hull, hullmins, hullmaxs);
 
 		Vector_Copy(offset, edict->state.origin);
-		printf("does this actually happen?\n");
 	}
 
 	return hull;
