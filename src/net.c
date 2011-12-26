@@ -82,6 +82,7 @@ int NET_Send(struct net *net, const void *data, int datalen, struct netaddr *add
 	struct sockaddr_in addr;
 
 	ni = (struct net_internal *)net;
+	memset(&addr, 0, sizeof(struct sockaddr_in));
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(address->addr.ipv4.port);
 	*(unsigned int *)&addr.sin_addr.s_addr = *(unsigned int *)address->addr.ipv4.address;
@@ -98,6 +99,7 @@ int NET_Recieve(struct net *net, void *data, int datalen, struct netaddr *addres
 
 	ni = (struct net_internal *)net;
 	fromlen = sizeof(addr);
+	memset(&addr, 0, sizeof(struct sockaddr_in));
 	r = recvfrom(ni->socket, data, datalen, 0, (struct sockaddr *)&addr, &fromlen);
 
 	if (fromlen != sizeof(addr))
