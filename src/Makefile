@@ -30,6 +30,7 @@ OBJ=$(SRC:.c=.o)
 CFLAGS+= -g
 CFLAGS+= -D__LITTLE_ENDIAN__Q__
 CFLAGS+= -Wall
+CFLAGS+= -O0
 
 TARGETSYSTEM:=$(shell gcc -dumpmachine)
 

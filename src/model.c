@@ -92,9 +92,11 @@ struct leaf *Model_LoadLeafs(struct lump *lump, unsigned char *base, int *leafs_
 		return NULL;
 	}
 
-	*leafs_count = count;
 
 	count = lump->filelen / sizeof(*in);
+
+	*leafs_count = count;
+
 	out = (struct leaf *) calloc(count, sizeof(*out));
 
 	rout = out;
