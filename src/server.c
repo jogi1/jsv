@@ -861,6 +861,13 @@ static void Server_ProcessMessage(struct server *server ,struct packet *packet, 
 
 	if (print_packets)
 		printf("client(%i): ", clientid);
+
+	if (client == NULL)
+	{
+		printf("wtf?\n");
+		return;
+	}
+
 	i = packet->data.data.sequence.c[0]
 		+ (packet->data.data.sequence.c[1] << 8)
 		+ (packet->data.data.sequence.c[2] << 16)
