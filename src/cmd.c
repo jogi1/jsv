@@ -45,6 +45,7 @@ void CMD_New(struct server *server, struct client *client, struct tokenized_stri
 	Client_Write(client, "biisbs",
 			svc_serverdata, server->protocol_version, server->spawn_count,
 			"qw", playernum, server->map->name ? server->map->name : "somethings not right");
+#warning send proper movevars
 	Client_Write(client, "ffffffffff", 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 ,1.0 , 1.0, 1.0);
 	Client_Write(client, "bs", svc_stufftext, "fullserverinfo \"cunt!\"\n");
 	Client_Write(client, "bb", svc_cdtrack, 0);

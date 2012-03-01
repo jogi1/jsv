@@ -14,6 +14,7 @@ SRC= \
 	tools.c \
 	net.c \
 	packet.c \
+	player.c \
 	tokenize_string.c \
 	cmd.c \
 	lua.c \

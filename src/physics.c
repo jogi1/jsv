@@ -14,6 +14,10 @@ void Physics_Frame(struct server *server)
 		if (server->clients[i].inuse == false)
 			continue;
 
+		Player_Move(server, &server->clients[i], &server->edicts[i+1], &client->ucmd_new);
+
+		/*
+
 		client = &server->clients[i];
 
 		Vector_Angles(server->edicts[i+1].state.angles, forward, right, up);
@@ -30,6 +34,7 @@ void Physics_Frame(struct server *server)
 
 		trace = Trace_Trace(server, NULL, e->state.mins, e->state.maxs, e->state.origin, end, 0, e);
 		Vector_Copy(e->state.origin, trace->endpos);
+		*/
 		/*
 		printf("mins: ");
 		PRINT_VEC(e->state.mins);
