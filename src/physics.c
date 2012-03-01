@@ -14,6 +14,7 @@ void Physics_Frame(struct server *server)
 		if (server->clients[i].inuse == false)
 			continue;
 
+		client = &server->clients[i];
 		Player_Move(server, &server->clients[i], &server->edicts[i+1], &client->ucmd_new);
 
 		/*
